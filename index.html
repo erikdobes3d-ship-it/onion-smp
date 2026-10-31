@@ -613,6 +613,7 @@ const pid = uid => `${APP}-${uid}`;
 const LOBBY_N = 4;
 const LOBBY = (() => { let h = 5381; for (const ch of location.host + location.pathname) h = ((h * 33) ^ ch.charCodeAt(0)) >>> 0; return `${APP}-lobby${h.toString(36)}`; })();
 let lobbyPeer = null, lobbyTrying = false;
+const lobbyDiag = {};   // what a newcomer found at each lobby slot (shown while connecting)
 function claimLobby(k = 0) {
   if (!cat.group || lobbyPeer || (lobbyTrying && k === 0) || k >= LOBBY_N || typeof Peer === 'undefined') { if (k >= LOBBY_N) lobbyTrying = false; return; }
   lobbyTrying = true;
@@ -636,7 +637,12 @@ function startNet() {
   peer.on('connection', c => c.metadata && c.metadata.kind === 'file' ? serveFile(c) : setupConn(c));
   peer.on('disconnected', () => { setNet('connecting'); setTimeout(() => { if (peer && !peer.destroyed && peer.disconnected) peer.reconnect(); }, 3000); });
   peer.on('error', e => {
-    if (e.type === 'peer-unavailable') return;
+    if (e.type === 'peer-unavailable') {
+      const m = /lobby[a-z0-9]+-(\d)/.exec(e.message || '');
+      if (m) { lobbyDiag[m[1]] = { st: 'none' }; pending.delete('L' + m[1]); renderBanners(); }
+      else { const u = /peer (\S+)/.exec(e.message || ''); if (u) pending.delete(u[1].split('-').pop()); }   // retry soon
+      return;
+    }
     if (e.type === 'unavailable-id') { setNet('dup'); return; }
     console.warn('peer', e.type, e);
     if (['network', 'server-error', 'socket-error', 'socket-closed'].includes(e.type)) setNet('connecting');
@@ -651,8 +657,9 @@ function connectAll() {
   if (!cat.group) {                                          // not synced yet: try the invite and the lobby
     for (const u of inviters()) targets.add(u);
     for (let k = 0; k < LOBBY_N; k++) if (!conns.has('L' + k) && !pending.has('L' + k)) {
-      pending.add('L' + k); setTimeout(() => pending.delete('L' + k), 8000);
-      setupConn(peer.connect(`${LOBBY}-${k}`, { reliable: true, serialization: 'binary' }));
+      pending.add('L' + k); setTimeout(() => pending.delete('L' + k), 15000);
+      const c = peer.connect(`${LOBBY}-${k}`, { reliable: true, serialization: 'binary' });
+      lobbyDiag[k] = { st: 'try', c }; setupConn(c);
     }
   } else claimLobby();
   for (const uid of targets) if (uid !== me.uid && !conns.has(uid)) connectTo(uid);
@@ -976,7 +983,15 @@ function renderBanners() {
   if (store.mode === 'folder' && !store.ready)
     add(`Aplikace potřebuje znovu povolit přístup ke tvé složce „${store.dir.name}“, jinak ostatní nemůžou přehrávat tvoje videa.`, 'Povolit přístup', async () => { if (await store.regrant()) { toast('Přístup ke složce povolen.'); render(); } });
   if (isAdmin && pendingRequests().length) { const l = pendingRequests(); add(`${l.map(r => nameOf(r.id)).join(', ')} ${l.length > 1 ? 'žádají' : 'žádá'} o vlastní SMP.`, 'Vyřídit', openAdmin); }
-  if (!cat.group) add(`Připojuji se ke skupině… Aspoň jeden hráč ze skupiny musí mít onion SMP právě otevřené. Až ho někdo otevře, připojíš se sám.`);
+  if (!cat.group) {
+    const st = [...Array(LOBBY_N).keys()].map(k => {
+      if (conns.has('L' + k)) return `${k}: spojeno`;
+      const d = lobbyDiag[k]; if (!d) return `${k}: zkouším`;
+      if (d.st === 'none') return `${k}: nikdo`;
+      const pc = d.c?.peerConnection; return `${k}: hráč nalezen, spojení ${pc ? pc.iceConnectionState : 'se navazuje'}`;
+    }).join(' · ');
+    add(`Připojuji se ke skupině… Aspoň jeden hráč ze skupiny musí mít onion SMP právě otevřené. Až ho někdo otevře, připojíš se sám. [${netState === 'ok' ? 'síť OK' : 'síť: ' + netState} | vrátnice ${st}]`);
+  }
   if (netState === 'dup') add('onion SMP už máš otevřený v jiné záložce nebo okně. Zavři ho a tuhle stránku obnov.', 'Obnovit', () => location.reload(), true);
   if (netState === 'nolib') add('Nepodařilo se načíst síťovou knihovnu. Zkontroluj připojení k internetu a stránku obnov.', 'Obnovit', () => location.reload(), true);
   if (store.mode === 'idb' && !FS_OK && !sessionStorage.getItem('hideFsInfo'))
@@ -1290,6 +1305,7 @@ const inviteLink = () => {
 function openSettings() {
   $('#stName').value = me.name; $('#stLink').value = inviteLink();
   const b = $('#stStore'); b.textContent = '';
+  b.append(el('div', { class: 'hint', style: 'margin-bottom:10px', text: `Vrátnice pro nové hráče: ${lobbyPeer ? 'tento počítač ji drží (č. ' + lobbyPeer.id.split('-').pop() + ')' : 'tento počítač ji nedrží'} · ID: ${me.uid}` }));
   b.append(el('div', { style: 'font-weight:700;margin-bottom:6px', text: 'Úložiště videí' }),
     el('div', { class: 'hint', text: store.mode === 'folder' ? `Složka: ${store.dir.name}${store.ready ? '' : ' (přístup je potřeba znovu povolit)'}` : 'Videa se ukládají v tomto prohlížeči.' }));
   if (FS_OK) b.append(el('button', { type: 'button', class: 'btn sec small', style: 'margin-top:10px', text: store.mode === 'folder' ? 'Změnit složku' : 'Vybrat složku', onclick: async () => {
@@ -1343,7 +1359,7 @@ $('#search').oninput = () => { renderRail(); renderChannel(); };
 $('#logoSlot').innerHTML = onionSvg(40);
 $('#logoSlot').style.display = 'inline-flex';
 
-function start() { routeFromHash(); render(); startNet(); }
+function start() { routeFromHash(); render(); startNet(); setInterval(() => { if (!cat.group) renderBanners(); }, 2000); }
 
 (async function boot() {
   await store.init();
