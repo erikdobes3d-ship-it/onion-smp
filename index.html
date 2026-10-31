@@ -648,25 +648,59 @@ async function onMsg(uid, c, d) {
         save(); render(); broadcast(uid); connectAll();
       }
       break;
+    case 'get': serveMain(c, d, uid); break;
+    case 'cancel': { const st = serving.get(d.rid); if (st) st.cancel = true; break; }
+    case 'meta': case 'chunk': case 'end': case 'err':
+      if (dl && dl.main && dl.rid === d.rid && dl.uid === uid) { if (d.t === 'chunk') gotChunk(dl, d.data); else handleMsg(dl, d); }
+      break;
   }
 }
 
-/* ---- sending a file: a separate raw connection per download (fast, no repacking) ---- */
+/* ---- sending a file ----
+   1st choice: a separate raw connection per download (fast, no repacking).
+   Fallback: the already open catalog connection (slower, but it is known to work). */
+const serving = new Map();
+async function fileFor(vid, fromUid) {
+  const v = cat.videos[vid];
+  if (!v || v.deleted) return { why: 'missing' };
+  if (store.mode === 'folder' && !store.ready && await store.has(vid)) {
+    toast(`${nameOf(fromUid)} chce přehrát tvoje video. Klikni nahoře na „Povolit přístup“ ke složce.`, 9000);
+    return { why: 'perm' };
+  }
+  const f = await store.get(vid);
+  return f ? { f, v } : { why: 'missing' };
+}
+const busy = c => (c.bufferSize || 0) > 8 || (c.dataChannel && c.dataChannel.bufferedAmount > 4e6);
 function serveFile(c) {
   c.on('error', () => { });
   c.on('open', async () => {
-    const v = cat.videos[c.metadata.vid];
-    const f = v && !v.deleted ? await store.get(v.id) : null;
-    if (!f) { c.send(JSON.stringify({ t: 'err' })); return; }
-    c.send(JSON.stringify({ t: 'meta', size: f.size, type: f.type || v.type || 'video/mp4' }));
+    if (params.has('noraw')) return c.close();            // test hook: simulate a blocked raw connection
+    const r = await fileFor(c.metadata.vid, c.peer.split('-').pop());
+    if (!r.f) { c.send(JSON.stringify({ t: 'err', why: r.why })); return; }
+    c.send(JSON.stringify({ t: 'meta', size: r.f.size, type: r.f.type || r.v.type || 'video/mp4' }));
     const CH = 64 * 1024; let off = 0;
-    while (off < f.size && c.open) {
-      while (c.open && ((c.bufferSize || 0) > 8 || (c.dataChannel && c.dataChannel.bufferedAmount > 4e6))) await sleep(15);
-      const buf = await f.slice(off, off + CH).arrayBuffer();
+    while (off < r.f.size && c.open) {
+      while (c.open && busy(c)) await sleep(15);
+      const buf = await r.f.slice(off, off + CH).arrayBuffer();
       c.send(buf); off += buf.byteLength;
     }
     if (c.open) c.send(JSON.stringify({ t: 'end' }));
   });
+}
+async function serveMain(c, d, uid) {
+  const r = await fileFor(d.vid, uid);
+  if (!r.f) { c.send({ t: 'err', rid: d.rid, why: r.why }); return; }
+  const st = { cancel: false }; serving.set(d.rid, st);
+  c.send({ t: 'meta', rid: d.rid, size: r.f.size, type: r.f.type || r.v.type || 'video/mp4' });
+  const CH = 256 * 1024; let off = 0;
+  try {
+    while (off < r.f.size && !st.cancel && c.open) {
+      while (!st.cancel && c.open && busy(c)) await sleep(25);
+      const buf = await r.f.slice(off, off + CH).arrayBuffer();
+      c.send({ t: 'chunk', rid: d.rid, data: buf }); off += buf.byteLength;
+    }
+    if (!st.cancel && c.open) c.send({ t: 'end', rid: d.rid });
+  } finally { serving.delete(d.rid); }
 }
 
 /* ---- receiving a file ---- */
@@ -675,30 +709,49 @@ function sourcesFor(v) {
   const hs = Object.keys(cat.holders[v.id] || {});
   return [v.owner, ...hs.filter(u => u !== v.owner)].filter(u => u !== me.uid && online.has(u) && conns.get(u)?.open);
 }
-function requestFrom(v, srcs) {
-  const uid = srcs.shift();
-  if (!uid) return dlFail(`Video teď nejde stáhnout. ${nameOf(v.owner)} ani nikdo jiný, kdo ho má, není online.`);
-  const c = peer.connect(pid(uid), { reliable: true, serialization: 'raw', metadata: { kind: 'file', vid: v.id } });
-  const d = dl = { v, srcs, conn: c, uid, parts: [], got: 0, size: v.size || 0, type: v.type };
-  plStatus(`Připojuji se k hráči ${nameOf(uid)}…`, 0);
-  c.on('data', m => onRecv(d, m));
-  c.on('close', () => { if (dl === d) dlFail('Spojení s hráčem se přerušilo.'); });
-  c.on('error', () => { });
-  setTimeout(() => { if (dl === d && !d.got && !c.open) { c.close(); dl = null; requestFrom(v, srcs); } }, 15000);
+function failText(v, reasons) {
+  const o = nameOf(v.owner);
+  if (reasons.includes('perm')) return `${o} má video ve složce, ale jeho aplikace k ní teď nemá přístup. ${o} musí v onion SMP nahoře kliknout na „Povolit přístup“. Pak to zkus znovu.`;
+  if (reasons.includes('missing')) return `Soubor videa u hráče ${o} chybí. Asi ho přesunul nebo smazal ze složky, musí ho nahrát znovu.`;
+  if (reasons.includes('net')) return `Nepodařilo se spojit s hráčem ${o} kvůli stažení videa. Zkus to za chvíli znovu, případně ať ${o} obnoví stránku.`;
+  return `Video teď nejde stáhnout. ${o} ani nikdo jiný, kdo ho má, není online.`;
 }
-function nextSource(d) { dl = null; d.conn.close(); requestFrom(d.v, d.srcs); }
-async function onRecv(d, m) {
+function requestFrom(v, srcs, reasons = []) {
+  const uid = srcs.shift();
+  if (!uid) return dlFail(failText(v, reasons));
+  const c = peer.connect(pid(uid), { reliable: true, serialization: 'raw', metadata: { kind: 'file', vid: v.id } });
+  const d = dl = { v, srcs, reasons, conn: c, uid, rid: rid(), main: false, parts: [], got: 0, size: v.size || 0, type: v.type };
+  plStatus(`Připojuji se k hráči ${nameOf(uid)}…`, 0);
+  c.on('data', m => { if (dl !== d || d.main) return; if (typeof m === 'string') handleMsg(d, JSON.parse(m)); else gotChunk(d, m); });
+  c.on('close', () => { if (dl === d && !d.main) viaMain(d); });
+  c.on('error', () => { });
+  setTimeout(() => { if (dl === d && !d.main && !d.got && !d.started) viaMain(d); }, 8000);
+}
+function viaMain(d) {                                       // raw connection failed: use the catalog connection
+  if (d.main) return;
+  d.main = true; try { d.conn.close(); } catch { }
+  const m = conns.get(d.uid);
+  if (!m?.open) { d.reasons.push('net'); return nextSource(d); }
+  d.conn = m; d.parts = []; d.got = 0; d.started = false;
+  plStatus(`Stahuji od hráče ${nameOf(d.uid)} náhradní cestou…`, 0);
+  m.send({ t: 'get', vid: d.v.id, rid: d.rid });
+  setTimeout(() => { if (dl === d && !d.got && !d.started) { d.reasons.push('net'); nextSource(d); } }, 20000);
+}
+function nextSource(d) {
+  if (dl === d) dl = null;
+  if (d.main) { if (d.conn.open) d.conn.send({ t: 'cancel', rid: d.rid }); } else try { d.conn.close(); } catch { }
+  requestFrom(d.v, d.srcs, d.reasons);
+}
+function gotChunk(d, m) {
+  d.started = true; d.parts.push(m); d.got += m.byteLength ?? m.size ?? 0;
+  plStatus(`Stahuji od hráče ${nameOf(d.uid)}… ${fmtSize(d.got)} z ${fmtSize(d.size)}`, d.size ? d.got / d.size : 0);
+}
+async function handleMsg(d, msg) {
   if (dl !== d) return;
-  if (typeof m !== 'string') {
-    d.parts.push(m); d.got += m.byteLength ?? m.size ?? 0;
-    plStatus(`Stahuji od hráče ${nameOf(d.uid)}… ${fmtSize(d.got)} z ${fmtSize(d.size)}`, d.size ? d.got / d.size : 0);
-    return;
-  }
-  const msg = JSON.parse(m);
-  if (msg.t === 'meta') { d.size = msg.size; d.type = msg.type; }
-  else if (msg.t === 'err') nextSource(d);
+  if (msg.t === 'meta') { d.started = true; d.size = msg.size; d.type = msg.type; }
+  else if (msg.t === 'err') { d.reasons.push(msg.why || 'missing'); nextSource(d); }
   else if (msg.t === 'end') {
-    dl = null; d.conn.close();
+    dl = null; if (!d.main) d.conn.close();
     const { v } = d;
     const blob = new Blob(d.parts, { type: d.type || 'video/mp4' });
     playBlob(blob, '');
@@ -903,7 +956,7 @@ async function play(v) {
   requestFrom(v, sourcesFor(v));
 }
 function closePlayer(silent) {
-  if (dl) { const c = dl.conn; dl = null; c.close(); }
+  if (dl) { const d = dl; dl = null; if (d.main) { if (d.conn.open) d.conn.send({ t: 'cancel', rid: d.rid }); } else d.conn.close(); }
   const vid = $('#plVideo'); vid.pause(); vid.removeAttribute('src'); vid.load();
   if (plUrl) { URL.revokeObjectURL(plUrl); plUrl = null; }
   plStatus('', null);
