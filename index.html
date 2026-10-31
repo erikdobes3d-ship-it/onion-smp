@@ -215,13 +215,14 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
   </div>
   <label class="f">Tvoje jméno<input type="text" id="sName" required maxlength="30" placeholder="např. Michal" autocomplete="nickname"></label>
   <div id="sJoin">
-   <label class="f">Pozvánka (odkaz od jiného hráče)<input type="text" id="sLink" placeholder="https://…#join=…"></label>
+   <label class="f">Pozvánka (nepovinné)<input type="text" id="sLink" placeholder="https://…#join=…"></label>
+   <div class="hint" style="margin-top:6px">Bez pozvánky se připojíš ke skupině na tomhle webu. Stačí, aby měl onion SMP otevřené aspoň jeden hráč.</div>
   </div>
   <div id="sCreate" class="hidden" style="display:flex;flex-direction:column;gap:14px">
    <label class="f">Název skupiny<input type="text" id="sGroup" maxlength="40" placeholder="onion SMP"></label>
    <label class="f">Kód admina<input type="password" id="sCode" minlength="4" autocomplete="new-password"></label>
    <label class="f">Kód admina znovu<input type="password" id="sCode2" autocomplete="new-password"></label>
-   <div class="hint">Kdo zná kód, může si založit vlastní SMP a nahrávat do něj videa. Ostatní se jen dívají.</div>
+   <div class="hint">Skupinu zakládá jen první hráč. Když už na tomhle webu skupina je, použij „Připojit se“. Kód admina dej jen správcům, kteří budou schvalovat žádosti o vlastní SMP.</div>
   </div>
   <div class="box" id="sStore"></div>
   <div class="err" id="sErr" role="alert"></div>
@@ -507,11 +508,12 @@ async function mergeCat(inc) {
   if (!inc || typeof inc !== 'object') return false;
   let changed = false;
   if (inc.group) {
-    if (inc.group.id !== gid()) return false;
+    if (gid() && inc.group.id !== gid()) return false;
     if (!cat.group) {
       const k = await importPub(inc.group.pub).catch(() => null);
       if (!k || !(await verify(inc.group, k))) return false;
       cat.group = inc.group; verifyKey = k; changed = true;
+      if (!me.gid) { me.gid = inc.group.id; await idb.set('kv', 'me', me); }   // joined through the lobby
     } else if (canon(inc.group.pub) === canon(cat.group.pub) && newer(inc.group, cat.group) && await verify(inc.group)) {
       cat.group = inc.group; changed = true;
     }
@@ -605,7 +607,22 @@ async function saveSmp(data, isNew) {
 /* ================= Network (PeerJS / WebRTC) ================= */
 let peer = null;
 const conns = new Map(), online = new Set(), pending = new Set();
-const pid = uid => `${APP}-${gid()}-${uid}`;
+const pid = uid => `${APP}-${uid}`;
+/* "Lobby": every open app tries to also register one of a few well-known IDs (one per website address).
+   A newcomer without an invite connects to them and receives the whole catalog. */
+const LOBBY_N = 4;
+const LOBBY = (() => { let h = 5381; for (const ch of location.host + location.pathname) h = ((h * 33) ^ ch.charCodeAt(0)) >>> 0; return `${APP}-lobby${h.toString(36)}`; })();
+let lobbyPeer = null, lobbyTrying = false;
+function claimLobby(k = 0) {
+  if (!cat.group || lobbyPeer || (lobbyTrying && k === 0) || k >= LOBBY_N || typeof Peer === 'undefined') { if (k >= LOBBY_N) lobbyTrying = false; return; }
+  lobbyTrying = true;
+  const lp = new Peer(`${LOBBY}-${k}`, peerOpts());
+  lp.on('open', () => { lobbyPeer = lp; lobbyTrying = false; });
+  lp.on('connection', c => c.metadata && c.metadata.kind === 'file' ? serveFile(c) : setupConn(c));
+  lp.on('error', e => { if (e.type === 'unavailable-id') { lp.destroy(); claimLobby(k + 1); } });
+  lp.on('close', () => { if (lobbyPeer === lp) lobbyPeer = null; });
+  lp.on('disconnected', () => { if (lobbyPeer === lp) { lobbyPeer = null; lp.destroy(); } });
+}
 function peerOpts() {
   const o = { debug: 1 }, ph = params.get('peerhost');
   if (ph) { const [h, p] = ph.split(':'); Object.assign(o, { host: h, port: +(p || 443), path: params.get('peerpath') || '/', secure: params.get('peersecure') !== '0' }); }
@@ -615,7 +632,7 @@ function startNet() {
   if (typeof Peer === 'undefined') { setNet('nolib'); return; }
   setNet('connecting');
   peer = new Peer(pid(me.uid), peerOpts());
-  peer.on('open', () => { setNet('ok'); connectAll(); });
+  peer.on('open', () => { setNet('ok'); connectAll(); claimLobby(); });
   peer.on('connection', c => c.metadata && c.metadata.kind === 'file' ? serveFile(c) : setupConn(c));
   peer.on('disconnected', () => { setNet('connecting'); setTimeout(() => { if (peer && !peer.destroyed && peer.disconnected) peer.reconnect(); }, 3000); });
   peer.on('error', e => {
@@ -631,7 +648,13 @@ const inviters = () => [...(me.inviters || []), ...(me.inviter ? [me.inviter] : 
 function connectAll() {
   if (!peer || peer.disconnected || peer.destroyed) return;
   const targets = new Set(Object.keys(cat.users));
-  if (!cat.group) for (const u of inviters()) targets.add(u);   // not synced yet: try everyone from the invite
+  if (!cat.group) {                                          // not synced yet: try the invite and the lobby
+    for (const u of inviters()) targets.add(u);
+    for (let k = 0; k < LOBBY_N; k++) if (!conns.has('L' + k) && !pending.has('L' + k)) {
+      pending.add('L' + k); setTimeout(() => pending.delete('L' + k), 8000);
+      setupConn(peer.connect(`${LOBBY}-${k}`, { reliable: true, serialization: 'binary' }));
+    }
+  } else claimLobby();
   for (const uid of targets) if (uid !== me.uid && !conns.has(uid)) connectTo(uid);
 }
 function connectTo(uid) {
@@ -640,7 +663,7 @@ function connectTo(uid) {
   setupConn(peer.connect(pid(uid), { reliable: true, serialization: 'binary' }));
 }
 function setupConn(c) {
-  const uid = c.peer.split('-').pop();
+  const uid = c.peer.startsWith(LOBBY + '-') ? 'L' + c.peer.split('-').pop() : c.peer.split('-').pop();
   c.on('open', () => {
     pending.delete(uid); conns.set(uid, c); online.add(uid);
     c.send({ t: 'cat', gid: gid(), cat });
@@ -661,7 +684,7 @@ async function onMsg(uid, c, d) {
   if (!d || typeof d !== 'object') return;
   switch (d.t) {
     case 'cat':
-      if (d.gid !== gid()) return;
+      if (gid() && d.gid && d.gid !== gid()) return;
       if (await mergeCat(d.cat)) {
         if ((me.inviter || me.inviters) && cat.group) { delete me.inviter; delete me.inviters; await idb.set('kv', 'me', me); }
         save(); render(); broadcast(uid); connectAll();
@@ -942,7 +965,7 @@ function renderPlayers() {
 }
 function renderNet() {
   const p = $('#netPill'); const others = Object.keys(cat.users).filter(u => u !== me?.uid).length;
-  const txt = { ok: `${online.size} z ${others} hráčů online`, connecting: 'Připojuji…', dup: 'Otevřeno jinde', nolib: 'Bez sítě', off: 'Offline' }[netState];
+  const txt = { ok: `${[...online].filter(u => cat.users[u] && u !== me.uid).length} z ${others} hráčů online`, connecting: 'Připojuji…', dup: 'Otevřeno jinde', nolib: 'Bez sítě', off: 'Offline' }[netState];
   p.innerHTML = `<span class="dot${netState === 'ok' ? ' on' : ''}"></span><span></span>`;
   p.lastChild.textContent = txt;
 }
@@ -953,7 +976,7 @@ function renderBanners() {
   if (store.mode === 'folder' && !store.ready)
     add(`Aplikace potřebuje znovu povolit přístup ke tvé složce „${store.dir.name}“, jinak ostatní nemůžou přehrávat tvoje videa.`, 'Povolit přístup', async () => { if (await store.regrant()) { toast('Přístup ke složce povolen.'); render(); } });
   if (isAdmin && pendingRequests().length) { const l = pendingRequests(); add(`${l.map(r => nameOf(r.id)).join(', ')} ${l.length > 1 ? 'žádají' : 'žádá'} o vlastní SMP.`, 'Vyřídit', openAdmin); }
-  if (!cat.group) add(`Připojuji se ke skupině… Aspoň jeden hráč ze skupiny musí mít onion SMP otevřené. Když to trvá dlouho, požádej o novou pozvánku.`);
+  if (!cat.group) add(`Připojuji se ke skupině… Aspoň jeden hráč ze skupiny musí mít onion SMP právě otevřené. Až ho někdo otevře, připojíš se sám.`);
   if (netState === 'dup') add('onion SMP už máš otevřený v jiné záložce nebo okně. Zavři ho a tuhle stránku obnov.', 'Obnovit', () => location.reload(), true);
   if (netState === 'nolib') add('Nepodařilo se načíst síťovou knihovnu. Zkontroluj připojení k internetu a stránku obnov.', 'Obnovit', () => location.reload(), true);
   if (store.mode === 'idb' && !FS_OK && !sessionStorage.getItem('hideFsInfo'))
@@ -1035,9 +1058,9 @@ $('#setupForm').onsubmit = async e => {
   $('#sGo').disabled = true;
   try {
     if (setupMode === 'join') {
-      const inv = parseInvite($('#sLink').value);
-      if (!inv) throw new Error('Vlož celý odkaz pozvánky od jiného hráče.');
-      me = { uid: rid(), name, gid: inv.gid, inviters: inv.inviters };
+      const link = $('#sLink').value.trim(), inv = parseInvite(link);
+      if (link && !inv) throw new Error('Tohle není platná pozvánka. Pole nech prázdné, nebo vlož celý odkaz.');
+      me = inv ? { uid: rid(), name, gid: inv.gid, inviters: inv.inviters } : { uid: rid(), name, gid: null };
       await idb.set('kv', 'me', me);
       await loadUserKey(); await commitMe();
     } else {
