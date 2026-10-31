@@ -234,10 +234,11 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
   <h2>Admin</h2>
   <div id="aLogin">
    <label class="f">Kód admina<input type="password" id="aCode" autocomplete="current-password"></label>
-   <div class="hint" style="margin-top:6px">Kód admina ti umožní založit si vlastní SMP. Ověření může chvíli trvat.</div>
+   <div class="hint" style="margin-top:6px">Kód admina mají jen správci skupiny, kteří schvalují žádosti o vlastní SMP. Pro vlastní SMP stačí ve sloupcích kliknout na „Požádat o vlastní SMP“.</div>
   </div>
   <div id="aIn" class="hidden" style="display:flex;flex-direction:column;gap:14px">
-   <div class="box">Máš práva admina, takže si můžeš založit vlastní SMP a nahrávat do něj videa.</div>
+   <div class="box">Máš práva admina: schvaluješ žádosti o vlastní SMP a můžeš mít vlastní SMP.</div>
+   <div id="aReq"></div>
    <label class="f">Nový kód admina (nepovinné)<input type="password" id="aNew" autocomplete="new-password"></label>
    <label class="f">Nový kód znovu<input type="password" id="aNew2" autocomplete="new-password"></label>
    <div class="hint">Admini, kteří už jsou přihlášení, práva neztratí. Nový kód platí pro další přihlášení.</div>
@@ -497,7 +498,7 @@ async function verify(o, key = verifyKey) {
 
 /* ================= State & catalog ================= */
 let me = null;                 // {uid, name, gid}
-let cat = { group: null, users: {}, smps: {}, sections: {}, videos: {}, holders: {} };
+let cat = { group: null, users: {}, grants: {}, requests: {}, smps: {}, sections: {}, videos: {}, holders: {} };
 let isAdmin = false, activeSec = null, netState = 'off';
 const gid = () => me && me.gid;
 
@@ -530,10 +531,19 @@ async function mergeCat(inc) {
     }
     cat.users[id] = u; changed = true;
   }
-  // an SMP belongs to one admin (SMP id = his player id); everything in it is signed with his own key
+  // requests for an own SMP (signed by the player) and admin decisions (signed with the group key)
+  for (const [id, e] of Object.entries(inc.requests || {})) {
+    if (!e || e.id !== id || e.by !== id || !newer(e, cat.requests[id])) continue;
+    if (await verify(e, await userVerifyKey(id))) { cat.requests[id] = e; changed = true; }
+  }
+  for (const [id, e] of Object.entries(inc.grants || {})) {
+    if (!e || e.id !== id || !newer(e, cat.grants[id])) continue;
+    if (await verify(e)) { cat.grants[id] = e; changed = true; }
+  }
+  // an SMP belongs to one player (SMP id = his player id); everything in it is signed with his own key
   for (const [id, e] of Object.entries(inc.smps || {})) {
     if (!e || e.id !== id || e.owner !== id || e.by !== id || typeof e.name !== 'string' || !newer(e, cat.smps[id])) continue;
-    if (!userIsAdmin(cat.users[id])) continue;
+    if (!canOwnSmp(id)) continue;
     if (e.bg != null && !(typeof e.bg === 'string' && e.bg.startsWith('data:image/jpeg;base64,') && e.bg.length < 400000)) continue;
     if (await verify(e, await userVerifyKey(id))) { cat.smps[id] = e; changed = true; }
   }
@@ -555,6 +565,14 @@ async function mergeCat(inc) {
   return changed;
 }
 const userIsAdmin = u => !!(u && (u.adm || (u.admin && u.sig && !u.pub)));
+function canOwnSmp(uid) {
+  const u = cat.users[uid]; if (!u) return false;
+  if (userIsAdmin(u)) return true;
+  const g = cat.grants?.[uid];
+  return !!(g && g.ok && u.pub && canon(g.pub) === canon(u.pub));
+}
+const reqPending = uid => { const r = cat.requests?.[uid], g = cat.grants?.[uid]; return !!(r && !r.cancelled && (!g || g.ts < r.ts)); };
+const pendingRequests = () => Object.values(cat.requests || {}).filter(r => reqPending(r.id) && !canOwnSmp(r.id));
 
 let saveTimer = null;
 function save() {
@@ -566,7 +584,7 @@ function save() {
 }
 async function commit(kind, e) {
   e.ts = Date.now(); e.by = me.uid; delete e.sig;
-  if (kind === 'group') { if (!signKey) throw new Error('Tohle může jen admin.'); await sign(e); }
+  if (kind === 'group' || kind === 'grants') { if (!signKey) throw new Error('Tohle může jen admin.'); await sign(e); }
   else await sign(e, userKey);
   if (kind === 'group') cat.group = e; else cat[kind][e.id] = e;
   save(); render(); broadcast();
@@ -608,11 +626,12 @@ function startNet() {
   });
   setInterval(connectAll, 5000);
 }
-function setNet(s) { netState = s; renderNet(); renderBanners(); }
+function setNet(s) { netState = s; if (me) render(); }
+const inviters = () => [...(me.inviters || []), ...(me.inviter ? [me.inviter] : [])];
 function connectAll() {
   if (!peer || peer.disconnected || peer.destroyed) return;
   const targets = new Set(Object.keys(cat.users));
-  if (me.inviter) targets.add(me.inviter);
+  if (!cat.group) for (const u of inviters()) targets.add(u);   // not synced yet: try everyone from the invite
   for (const uid of targets) if (uid !== me.uid && !conns.has(uid)) connectTo(uid);
 }
 function connectTo(uid) {
@@ -644,7 +663,7 @@ async function onMsg(uid, c, d) {
     case 'cat':
       if (d.gid !== gid()) return;
       if (await mergeCat(d.cat)) {
-        if (me.inviter && cat.group) { me.inviter = null; await idb.set('kv', 'me', me); }
+        if ((me.inviter || me.inviters) && cat.group) { delete me.inviter; delete me.inviters; await idb.set('kv', 'me', me); }
         save(); render(); broadcast(uid); connectAll();
       }
       break;
@@ -771,7 +790,7 @@ const COVERS = ['#8a5526', '#6f4a2b', '#a8662b', '#5d3d22', '#7a5a2a', '#6a3f24'
 const THUMBS = ['#5a3a1f', '#6e4824', '#4a3a2a', '#7a5428'];
 const nameOf = uid => cat.users[uid]?.name || 'neznámý hráč';
 const isOn = uid => uid === me.uid ? netState === 'ok' : online.has(uid);
-const liveSmps = () => Object.values(cat.smps).filter(x => !x.deleted)
+const liveSmps = () => Object.values(cat.smps).filter(x => !x.deleted && canOwnSmp(x.owner))
   .sort((a, b) => (b.owner === me.uid) - (a.owner === me.uid) || isOn(b.owner) - isOn(a.owner) || a.name.localeCompare(b.name, 'cs'));
 const secsOf = smp => Object.values(cat.sections).filter(x => x.smp === smp && !x.deleted).sort((a, b) => (a.order - b.order) || a.name.localeCompare(b.name, 'cs'));
 const vidsOf = smp => Object.values(cat.videos).filter(v => v.smp === smp && !v.deleted).sort((a, b) => b.created - a.created);
@@ -787,7 +806,9 @@ let activeSmp = null;
 function render() {
   if (!me) return;
   $('#groupName').textContent = 'VŠECHNA SMP · ' + (cat.group?.name || 'onion SMP').toUpperCase();
-  $('#adminBtn').innerHTML = icon(isAdmin ? 'unlock' : 'lock', 16) + (isAdmin ? 'Admin ✓' : 'Admin');
+  const nReq = isAdmin ? pendingRequests().length : 0;
+  $('#adminBtn').innerHTML = icon(isAdmin ? 'unlock' : 'lock', 16) + (isAdmin ? 'Admin ✓' : 'Admin') + (nReq ? ` <span class="badge" style="background:var(--text);color:var(--bg)">${nReq}</span>` : '');
+  if ($('#dlgAdmin').open) renderRequests();
   $('#folderPill').innerHTML = icon('folder', 15) + `<span></span>`;
   $('#folderPill span').textContent = `${me.name} · ${store.label()}`;
   $('#folderPill').title = store.mode === 'folder' ? 'Tvoje složka s videi' : 'Videa se ukládají v prohlížeči';
@@ -830,10 +851,15 @@ function renderRail() {
     host.append(el('section', { class: 'col' + (mine ? ' mine' : ''), 'aria-label': x.name }, head, title, stats, el('div', { class: 'feedlbl', text: 'NEJNOVĚJŠÍ' }), feed, foot));
   });
   if (!cat.group) host.append(el('div', { class: 'empty', text: 'Čekám na připojení ke skupině…' }));
-  else if (isAdmin && !cat.smps[me.uid]?.name || isAdmin && cat.smps[me.uid]?.deleted)
-    host.append(el('button', { type: 'button', class: 'newcol', onclick: () => openSmpDlg(true), html: icon('plus', 30) + '<span>Založit moje SMP</span><span class="hint" style="font-weight:400">Tvoje SMP uvidí všichni hráči.</span>' }));
-  else if (!isAdmin)
-    host.append(el('button', { type: 'button', class: 'newcol', onclick: openAdmin, html: icon('lock', 26) + '<span>Chceš vlastní SMP?</span><span class="hint" style="font-weight:400">Zadej kód admina a založ si ho.</span>' }));
+  else if (canOwnSmp(me.uid)) {
+    if (!cat.smps[me.uid] || cat.smps[me.uid].deleted)
+      host.append(el('button', { type: 'button', class: 'newcol', onclick: () => openSmpDlg(true), html: icon('plus', 30) + '<span>Založit moje SMP</span><span class="hint" style="font-weight:400">Tvoje SMP uvidí všichni hráči.</span>' }));
+  } else if (reqPending(me.uid))
+    host.append(el('div', { class: 'newcol', style: 'cursor:default', html: icon('lock', 26) + '<span>Žádost odeslána</span><span class="hint" style="font-weight:400">Čeká na schválení adminem. Jakmile ji schválí, můžeš si tu založit svoje SMP.</span>' }));
+  else {
+    const declined = cat.grants?.[me.uid] && !cat.grants[me.uid].ok;
+    host.append(el('button', { type: 'button', class: 'newcol', onclick: requestSmp, html: icon('plus', 26) + `<span>Požádat o vlastní SMP</span><span class="hint" style="font-weight:400">${declined ? 'Minulou žádost admin zamítl. Můžeš požádat znovu.' : 'Admin tvoji žádost schválí a pak si SMP založíš.'}</span>` }));
+  }
 }
 function openSmp(id) { location.hash = 'smp=' + id; }
 function routeFromHash() {
@@ -926,7 +952,8 @@ function renderBanners() {
   const add = (msg, btnText, fn, err) => hosts.forEach(host => host.append(el('div', { class: 'banner' + (err ? ' err' : '') }, el('span', { text: msg }), btnText ? el('button', { type: 'button', class: 'btn small', text: btnText, onclick: fn }) : null)));
   if (store.mode === 'folder' && !store.ready)
     add(`Aplikace potřebuje znovu povolit přístup ke tvé složce „${store.dir.name}“, jinak ostatní nemůžou přehrávat tvoje videa.`, 'Povolit přístup', async () => { if (await store.regrant()) { toast('Přístup ke složce povolen.'); render(); } });
-  if (!cat.group) add(`Připojuji se ke skupině… Hráč, od kterého máš pozvánku, musí mít aplikaci otevřenou.`);
+  if (isAdmin && pendingRequests().length) { const l = pendingRequests(); add(`${l.map(r => nameOf(r.id)).join(', ')} ${l.length > 1 ? 'žádají' : 'žádá'} o vlastní SMP.`, 'Vyřídit', openAdmin); }
+  if (!cat.group) add(`Připojuji se ke skupině… Aspoň jeden hráč ze skupiny musí mít onion SMP otevřené. Když to trvá dlouho, požádej o novou pozvánku.`);
   if (netState === 'dup') add('onion SMP už máš otevřený v jiné záložce nebo okně. Zavři ho a tuhle stránku obnov.', 'Obnovit', () => location.reload(), true);
   if (netState === 'nolib') add('Nepodařilo se načíst síťovou knihovnu. Zkontroluj připojení k internetu a stránku obnov.', 'Obnovit', () => location.reload(), true);
   if (store.mode === 'idb' && !FS_OK && !sessionStorage.getItem('hideFsInfo'))
@@ -968,8 +995,9 @@ $('#dlgPlayer').addEventListener('cancel', () => closePlayer(true));
 /* ================= Setup / onboarding ================= */
 let setupMode = 'join';
 function parseInvite(s) {
-  const m = /join=([a-z0-9]+)\.([a-z0-9]+)/.exec(s || '');
-  return m ? { gid: m[1], inviter: m[2] } : null;
+  const m = /join=([a-z0-9]+)((?:\.[a-z0-9]+)+)/.exec(s || '');
+  if (m) m[2] = m[2].slice(1).split('.').slice(0, 12);
+  return m ? { gid: m[1], inviters: m[2] } : null;
 }
 function renderSetupStore() {
   const b = $('#sStore'); b.textContent = '';
@@ -1009,7 +1037,7 @@ $('#setupForm').onsubmit = async e => {
     if (setupMode === 'join') {
       const inv = parseInvite($('#sLink').value);
       if (!inv) throw new Error('Vlož celý odkaz pozvánky od jiného hráče.');
-      me = { uid: rid(), name, gid: inv.gid, inviter: inv.inviter };
+      me = { uid: rid(), name, gid: inv.gid, inviters: inv.inviters };
       await idb.set('kv', 'me', me);
       await loadUserKey(); await commitMe();
     } else {
@@ -1041,7 +1069,31 @@ function openAdmin() {
   $('#aLogin').classList.toggle('hidden', isAdmin); $('#aIn').classList.toggle('hidden', !isAdmin);
   $('#aLogout').classList.toggle('hidden', !isAdmin);
   $('#aGo').textContent = isAdmin ? 'Uložit nový kód' : 'Přihlásit';
-  $('#dlgAdmin').showModal();
+  renderRequests();
+  $('#dlgAdmin').open || $('#dlgAdmin').showModal();
+}
+function renderRequests() {
+  const host = $('#aReq'); host.textContent = '';
+  if (!isAdmin) return;
+  const list = pendingRequests();
+  host.append(el('div', { style: 'font-weight:700;margin-bottom:8px', text: list.length ? `Žádosti o vlastní SMP (${list.length})` : 'Žádné nové žádosti o vlastní SMP.' }));
+  for (const r of list) host.append(el('div', { class: 'box', style: 'display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px' },
+    el('div', {}, el('b', { text: nameOf(r.id) }), el('div', { class: 'hint', text: `žádá o vlastní SMP · ${online.has(r.id) ? 'online' : 'offline'}` })),
+    el('div', { class: 'row' },
+      el('button', { type: 'button', class: 'btn ghost small', text: 'Zamítnout', onclick: () => decide(r.id, false) }),
+      el('button', { type: 'button', class: 'btn small', text: 'Schválit', onclick: () => decide(r.id, true) }))));
+}
+async function decide(uid, ok) {
+  const u = cat.users[uid];
+  if (ok && !u?.pub) return toast('Hráč má starou verzi aplikace. Ať obnoví stránku a požádá znovu.');
+  await commit('grants', ok ? { id: uid, ok: true, pub: u.pub } : { id: uid, ok: false });
+  toast(ok ? `${nameOf(uid)} si teď může založit vlastní SMP.` : `Žádost hráče ${nameOf(uid)} zamítnuta.`);
+  renderRequests();
+}
+async function requestSmp() {
+  if (!cat.group) return toast('Ještě nejsi připojený ke skupině.');
+  await commit('requests', { id: me.uid });
+  toast('Žádost odeslána. Admin ji uvidí, jakmile bude online.');
 }
 $('#adminForm').onsubmit = async e => {
   e.preventDefault(); const err = $('#aErr'); err.textContent = '';
@@ -1191,7 +1243,7 @@ $('#smpBg').onchange = async e => {
 $('#smpBgDel').onclick = () => { smpBg = null; showBg(); };
 $('#smpForm').onsubmit = async e => {
   e.preventDefault(); const err = $('#smpErr'); err.textContent = '';
-  if (!isAdmin) return err.textContent = 'Vlastní SMP si může založit jen admin.';
+  if (!canOwnSmp(me.uid)) return err.textContent = 'Na vlastní SMP potřebuješ schválení od admina.';
   const name = $('#smpName').value.trim(); if (!name) return;
   $('#smpGo').disabled = true;
   try {
@@ -1207,7 +1259,11 @@ $('#smpDel').onclick = async () => {
 };
 
 /* ================= Settings ================= */
-const inviteLink = () => `${location.origin}${location.pathname}${location.search}#join=${gid()}.${me.uid}`;
+// the invite lists several players (online first), so a newcomer can join through whoever is online
+const inviteLink = () => {
+  const others = Object.keys(cat.users).filter(u => u !== me.uid).sort((a, b) => online.has(b) - online.has(a)).slice(0, 9);
+  return `${location.origin}${location.pathname}${location.search}#join=${gid()}.${[me.uid, ...others].join('.')}`;
+};
 function openSettings() {
   $('#stName').value = me.name; $('#stLink').value = inviteLink();
   const b = $('#stStore'); b.textContent = '';
@@ -1271,7 +1327,7 @@ function start() { routeFromHash(); render(); startNet(); }
   me = await idb.get('kv', 'me');
   if (!me) return showSetup();
   cat = (await idb.get('kv', 'cat')) || cat;
-  cat.smps = cat.smps || {};
+  cat.smps = cat.smps || {}; cat.grants = cat.grants || {}; cat.requests = cat.requests || {};
   for (const k of ['sections', 'videos']) for (const [id, e] of Object.entries(cat[k])) if (!e.smp) delete cat[k][id];   // older version without SMPs
   if (cat.group) verifyKey = await importPub(cat.group.pub);
   const priv = await idb.get('kv', 'adminKey');
