@@ -29,7 +29,57 @@ header{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:c
 .btn.danger{background:var(--danger);color:#1b0904}
 .btn.small{min-height:36px;padding:0 12px;font-size:13px}
 .btn svg{flex:none}
-main{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:24px 24px 60px}
+main{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:24px 24px 60px}
+.toolbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:16px}
+.toolbar h1{margin:6px 0 2px;font-size:clamp(26px,4vw,34px);line-height:1.1}
+.rail{display:flex;gap:16px;overflow-x:auto;padding:4px 2px 18px;align-items:flex-start;scroll-snap-type:x proximity;scrollbar-color:var(--border) transparent}
+.col{flex:0 0 300px;max-width:85vw;scroll-snap-align:start;background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+.col.mine{border:2px solid var(--accent)}
+.colhead{height:120px;position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;padding:10px 14px;background-color:#8a5526;background-size:cover;background-position:center;overflow:hidden}
+.colhead.img::before{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.65),rgba(0,0,0,0) 65%)}
+.colhead>*{position:relative}
+.colhead .wmk{position:absolute;right:-18px;top:-12px;opacity:.18}
+.tag{font-size:12px;font-weight:700;letter-spacing:.08em;color:#fff2e0}
+.state{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:600}
+.coltitle{padding:12px 14px;border-bottom:1px solid var(--border)}
+.coltitle h2{font-size:19px;display:flex;align-items:center;gap:8px;word-break:break-word}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:12px 14px}
+.stat{padding:8px;border-radius:10px;background:var(--surface2);text-align:center}.stat b{display:block;font-size:18px}.stat span{font-size:11px;color:var(--muted)}
+.feedlbl{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--muted);padding:4px 14px}
+.feed{display:flex;flex-direction:column;gap:6px;padding:0 6px 6px}
+.secbadge{align-self:flex-start;margin-left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--surface2);color:var(--accent)}
+.mini{display:flex;gap:10px;align-items:center;width:100%;padding:6px;border:0;border-radius:10px;background:transparent;text-align:left;cursor:pointer}
+.mini:hover{background:var(--surface2)}
+.mini .mt{position:relative;flex:none;width:96px;height:54px;border-radius:8px;background:#5a3a1f;display:grid;place-items:center;overflow:hidden;color:#fff2e0}
+.mini .mt img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.mini .mt svg{position:relative}
+.mini .md{position:absolute;right:4px;bottom:3px;font-size:10px;font-weight:700;padding:0 4px;border-radius:4px;background:rgba(0,0,0,.7);color:#fff}
+.mini b{display:block;font-size:14px;line-height:1.25;word-break:break-word}.mini small{display:block;font-size:12px;color:var(--muted)}
+.mini.off{opacity:.6}
+.colfoot{display:flex;gap:8px;padding:8px 14px 14px;margin-top:auto}
+.colfoot .btn{flex:1}
+.newcol{flex:0 0 240px;min-height:420px;border:2px dashed var(--muted);border-radius:16px;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-weight:700;cursor:pointer;padding:20px;text-align:center}
+.newcol:hover{border-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.chips button{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-weight:600}
+.chips button[aria-pressed=true]{background:var(--accent);color:var(--onaccent);border-color:var(--accent)}
+#smpPage{position:relative;z-index:1}
+.bn{position:relative;height:280px;overflow:hidden;background:#6f4a2b center/cover}
+.bn.img::before{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.72),rgba(0,0,0,.1) 60%,rgba(0,0,0,.35))}
+.bn .wmk{position:absolute;right:4%;top:-30px;opacity:.15}
+.bnTop{position:absolute;left:28px;right:28px;top:20px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
+.bnBack{background:rgba(0,0,0,.55)!important;color:#fff!important;border:0!important}
+.bnBottom{position:absolute;left:28px;right:28px;bottom:22px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px;color:#fff}
+.bnBottom h1{margin:8px 0 4px;font-size:clamp(30px,5vw,46px);line-height:1.05;word-break:break-word}
+.bnSub{color:#f3e6d4;font-size:15px}
+.bnStats{display:flex;gap:8px}.bnStats div{padding:8px 14px;border-radius:12px;background:rgba(0,0,0,.55)}.bnStats b{display:block;font-size:20px}.bnStats span{font-size:12px;opacity:.85}
+.spMain{max-width:1320px;margin:0 auto;padding:22px 28px 60px}
+.spCols{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.spGrid{flex:999 1 560px;min-width:0}
+.spAside{flex:1 1 260px;max-width:100%;display:flex;flex-direction:column;gap:14px}
+.box2{padding:18px;border-radius:16px;background:var(--surface);border:1px solid var(--border)}.box2 h2{font-size:18px;margin-bottom:10px}
+@media(max-width:640px){.bn{height:300px}.bnTop,.bnBottom{left:14px;right:14px}.spMain{padding:16px 14px 50px}}
+.bgprev{height:110px;border-radius:12px;background:#8a5526 center/cover;border:1px solid var(--border)}
 .banner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-radius:var(--r1);border:1px solid #7a5a2a;background:#2e2414;margin-bottom:16px;font-size:14px}
 .banner.err{border-color:#8a3b2c;background:#2e1712}
 .hero{padding:30px;border-radius:22px;background:var(--hero);border:1px solid var(--border);margin-bottom:28px}
@@ -101,38 +151,59 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
  </div>
 </header>
 
-<main>
+<main id="home">
  <div id="banners"></div>
- <section class="hero">
-  <div class="eyebrow" id="groupName">SDÍLENÁ VIDEO KNIHOVNA</div>
-  <h1>Vítej v onion SMP</h1>
-  <p class="muted" style="margin:0;max-width:600px">Každý hráč sdílí videa ze své složky. Vyber sekci a pusť si, co ostatní natočili.</p>
-  <div class="row" style="margin-top:18px">
-   <button type="button" class="btn adminOnly" id="heroUpload"></button>
-   <button type="button" class="btn sec adminOnly" id="heroSection"></button>
+ <div class="toolbar">
+  <div><div class="eyebrow" id="groupName">VŠECHNA SMP</div><h1>SMP servery</h1><div class="muted">Každý sloupec je jedno SMP. Když se nevejdou, posuň do strany.</div></div>
+  <div class="row">
+   <input type="search" id="search" placeholder="Hledat ve všech SMP" aria-label="Hledat ve všech SMP" style="width:220px">
+   <button type="button" class="btn sec" id="railL" aria-label="Posunout doleva">‹</button>
+   <button type="button" class="btn sec" id="railR" aria-label="Posunout doprava">›</button>
    <button type="button" class="btn sec" id="heroInvite"></button>
   </div>
- </section>
-
- <div class="between"><h2>Sekce</h2><span class="muted" id="secStats"></span></div>
- <div class="sections" id="sections"></div>
-
- <section class="panel" id="channel">
-  <div class="between">
-   <div><div class="eyebrow" id="chTag"></div><h2 id="chTitle" style="margin-top:4px"></h2><div class="muted" id="chDesc"></div></div>
-   <div class="row">
-    <label class="sr" style="position:relative"><span class="hidden">Hledat</span><input type="search" id="search" placeholder="Hledat video" aria-label="Hledat video" style="min-width:200px"></label>
-    <button type="button" class="btn adminOnly" id="chUpload"></button>
-    <button type="button" class="btn sec adminOnly" id="chEdit">Upravit sekci</button>
-   </div>
-  </div>
-  <div class="videos" id="videos"></div>
-  <div class="empty hidden" id="empty">V této sekci zatím nejsou žádná videa.</div>
- </section>
+ </div>
+ <div class="rail" id="rail"></div>
 
  <div class="between"><h2>Hráči</h2><span class="muted">Videa jdou přehrát, když je jejich autor (nebo někdo, kdo je má uložené) online.</span></div>
  <div class="players" id="players"></div>
 </main>
+
+<div id="smpPage" class="hidden">
+ <section class="bn" id="spBanner">
+  <div class="bnTop">
+   <button type="button" class="btn bnBack" id="chClose">‹ Všechna SMP</button>
+   <div class="row">
+    <button type="button" class="btn ownerOnly" id="chUpload"></button>
+    <button type="button" class="btn sec ownerOnly" id="chNewSec">Nová sekce</button>
+    <button type="button" class="btn sec ownerOnly" id="chEdit">Upravit sekci</button>
+    <button type="button" class="btn sec ownerOnly" id="chSmp">Upravit SMP</button>
+   </div>
+  </div>
+  <div class="bnBottom">
+   <div><span class="state" id="spState"></span><h1 id="spName"></h1><div class="bnSub" id="spSub"></div></div>
+   <div class="bnStats" id="spStats"></div>
+  </div>
+ </section>
+ <div class="spMain">
+  <div id="spBanners"></div>
+  <div class="between" style="align-items:center">
+   <div class="chips" id="chips" role="group" aria-label="Sekce" style="margin:0"></div>
+   <input type="search" id="spSearch" placeholder="Hledat v SMP" aria-label="Hledat v SMP" style="width:220px">
+  </div>
+  <div class="spCols" style="margin-top:18px">
+   <div class="spGrid">
+    <h2 id="chTitle"></h2><div class="muted" id="chDesc" style="margin:2px 0 14px"></div>
+    <div class="videos" id="videos"></div>
+    <div class="empty hidden" id="empty">Tady zatím nejsou žádná videa.</div>
+   </div>
+   <aside class="spAside">
+    <div class="box2"><h2>O tomhle SMP</h2><p class="muted" id="spAbout" style="margin:0;font-size:14px;white-space:pre-line"></p></div>
+    <div class="box2"><h2>Admin</h2><div id="spAdmin"></div></div>
+    <div class="box2"><h2>Naposledy přidané</h2><div id="spRecent"></div></div>
+   </aside>
+  </div>
+ </div>
+</div>
 
 <!-- ===== Dialogs ===== -->
 <dialog id="dlgSetup">
@@ -150,7 +221,7 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
    <label class="f">Název skupiny<input type="text" id="sGroup" maxlength="40" placeholder="onion SMP"></label>
    <label class="f">Kód admina<input type="password" id="sCode" minlength="4" autocomplete="new-password"></label>
    <label class="f">Kód admina znovu<input type="password" id="sCode2" autocomplete="new-password"></label>
-   <div class="hint">Kód dáš jen tomu, kdo má mít práva admina (nahrávat, mazat, upravovat sekce). Bez kódu se práva admina získat nedají.</div>
+   <div class="hint">Kdo zná kód, může si založit vlastní SMP a nahrávat do něj videa. Ostatní se jen dívají.</div>
   </div>
   <div class="box" id="sStore"></div>
   <div class="err" id="sErr" role="alert"></div>
@@ -163,10 +234,10 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
   <h2>Admin</h2>
   <div id="aLogin">
    <label class="f">Kód admina<input type="password" id="aCode" autocomplete="current-password"></label>
-   <div class="hint" style="margin-top:6px">Ověření může chvíli trvat.</div>
+   <div class="hint" style="margin-top:6px">Kód admina ti umožní založit si vlastní SMP. Ověření může chvíli trvat.</div>
   </div>
   <div id="aIn" class="hidden" style="display:flex;flex-direction:column;gap:14px">
-   <div class="box">Máš práva admina. Můžeš nahrávat videa, zakládat a měnit sekce a upravovat cizí videa.</div>
+   <div class="box">Máš práva admina, takže si můžeš založit vlastní SMP a nahrávat do něj videa.</div>
    <label class="f">Nový kód admina (nepovinné)<input type="password" id="aNew" autocomplete="new-password"></label>
    <label class="f">Nový kód znovu<input type="password" id="aNew2" autocomplete="new-password"></label>
    <div class="hint">Admini, kteří už jsou přihlášení, práva neztratí. Nový kód platí pro další přihlášení.</div>
@@ -176,6 +247,24 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
    <button type="button" class="btn ghost hidden" id="aLogout">Odhlásit admina</button>
    <button type="button" class="btn sec" data-close>Zavřít</button>
    <button type="submit" class="btn" id="aGo">Přihlásit</button>
+  </div>
+ </form>
+</dialog>
+
+<dialog id="dlgSmp">
+ <form class="dlg" id="smpForm" method="dialog">
+  <h2 id="smpTitle">Moje SMP</h2>
+  <label class="f">Název SMP<input type="text" id="smpName" required maxlength="40"></label>
+  <label class="f">Popis<input type="text" id="smpDesc" maxlength="80" placeholder="např. Survival od první noci"></label>
+  <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:600">Obrázek na pozadí
+   <div class="bgprev" id="smpPrev"></div>
+   <div class="row"><label class="btn sec small" style="cursor:pointer">Vybrat obrázek<input type="file" id="smpBg" accept="image/*" class="hidden"></label><button type="button" class="btn ghost small" id="smpBgDel">Bez obrázku</button></div>
+   <span class="hint">Obrázek se zmenší na 640 × 256 px. Ideální je široký snímek ze hry.</span>
+  </div>
+  <div class="err" id="smpErr" role="alert"></div>
+  <div class="row" style="justify-content:space-between">
+   <button type="button" class="btn danger hidden" id="smpDel">Smazat SMP</button>
+   <div class="row" style="margin-left:auto"><button type="button" class="btn sec" data-close>Zrušit</button><button type="submit" class="btn" id="smpGo">Uložit</button></div>
   </div>
  </form>
 </dialog>
@@ -380,7 +469,27 @@ async function unwrapPriv(w, code) {
 }
 const importPub = jwk => crypto.subtle.importKey('jwk', jwk, EC, false, ['verify']);
 async function setSignKey(jwk) { signKey = await crypto.subtle.importKey('jwk', { ...jwk, key_ops: ['sign'] }, EC, false, ['sign']); }
-async function sign(o) { o.sig = b64(await crypto.subtle.sign(SIG, signKey, enc.encode(canon(o)))); return o; }
+async function sign(o, key = signKey) { o.sig = b64(await crypto.subtle.sign(SIG, key, enc.encode(canon(o)))); return o; }
+const signStr = async (str, key) => b64(await crypto.subtle.sign(SIG, key, enc.encode(str)));
+// every player has his own key pair: his videos and his profile are signed with it
+let userKey = null, userPub = null;
+async function loadUserKey() {
+  let priv = await idb.get('kv', 'userKey'), pub = await idb.get('kv', 'userPub');
+  if (!priv) {
+    const kp = await crypto.subtle.generateKey(EC, true, ['sign', 'verify']);
+    priv = await crypto.subtle.exportKey('jwk', kp.privateKey); pub = await crypto.subtle.exportKey('jwk', kp.publicKey);
+    await idb.set('kv', 'userKey', priv); await idb.set('kv', 'userPub', pub);
+  }
+  userKey = await crypto.subtle.importKey('jwk', { ...priv, key_ops: ['sign'] }, EC, false, ['sign']); userPub = pub;
+}
+const pubCache = new Map();
+async function userVerifyKey(uid) {
+  const pub = cat.users[uid]?.pub; if (!pub) return null;
+  const k = canon(pub);
+  if (!pubCache.has(k)) pubCache.set(k, await importPub(pub).catch(() => null));
+  return pubCache.get(k);
+}
+const admText = u => `adm:${u.id}:${canon(u.pub)}`;
 async function verify(o, key = verifyKey) {
   if (!o || typeof o.sig !== 'string' || !key) return false;
   try { return await crypto.subtle.verify(SIG, key, unb64(o.sig), enc.encode(canon(o))); } catch { return false; }
@@ -388,7 +497,7 @@ async function verify(o, key = verifyKey) {
 
 /* ================= State & catalog ================= */
 let me = null;                 // {uid, name, gid}
-let cat = { group: null, users: {}, sections: {}, videos: {}, holders: {} };
+let cat = { group: null, users: {}, smps: {}, sections: {}, videos: {}, holders: {} };
 let isAdmin = false, activeSec = null, netState = 'off';
 const gid = () => me && me.gid;
 
@@ -407,15 +516,36 @@ async function mergeCat(inc) {
     }
   }
   if (!cat.group) return changed;
-  for (const kind of ['sections', 'videos']) {
-    for (const [id, e] of Object.entries(inc[kind] || {})) {
-      if (e && e.id === id && newer(e, cat[kind][id]) && await verify(e)) { cat[kind][id] = e; changed = true; }
-    }
-  }
   for (const [id, u] of Object.entries(inc.users || {})) {
     if (!u || u.id !== id || typeof u.name !== 'string' || !newer(u, cat.users[id])) continue;
-    if (u.by !== id && !(await verify(u))) continue;          // only the user himself or an admin edits a user
+    const known = cat.users[id]?.pub;
+    if (u.pub) {                                              // signed by the player's own key, key never changes
+      if (known && canon(known) !== canon(u.pub)) continue;
+      const k = await importPub(u.pub).catch(() => null);
+      if (!k || !(await verify(u, k))) continue;
+      if (u.adm && !(verifyKey && await crypto.subtle.verify(SIG, verifyKey, unb64(u.adm), enc.encode(admText(u))).catch(() => false))) continue;
+    } else {                                                  // older record without a key
+      if (known) continue;
+      if ((u.by !== id || u.admin) && !(await verify(u))) continue;
+    }
     cat.users[id] = u; changed = true;
+  }
+  // an SMP belongs to one admin (SMP id = his player id); everything in it is signed with his own key
+  for (const [id, e] of Object.entries(inc.smps || {})) {
+    if (!e || e.id !== id || e.owner !== id || e.by !== id || typeof e.name !== 'string' || !newer(e, cat.smps[id])) continue;
+    if (!userIsAdmin(cat.users[id])) continue;
+    if (e.bg != null && !(typeof e.bg === 'string' && e.bg.startsWith('data:image/jpeg;base64,') && e.bg.length < 400000)) continue;
+    if (await verify(e, await userVerifyKey(id))) { cat.smps[id] = e; changed = true; }
+  }
+  for (const [id, e] of Object.entries(inc.sections || {})) {
+    if (!e || e.id !== id || !e.smp || e.by !== e.smp || !newer(e, cat.sections[id])) continue;
+    if (cat.sections[id] && cat.sections[id].smp !== e.smp) continue;
+    if (await verify(e, await userVerifyKey(e.smp))) { cat.sections[id] = e; changed = true; }
+  }
+  for (const [id, e] of Object.entries(inc.videos || {})) {
+    if (!e || e.id !== id || !e.smp || e.smp !== e.owner || e.by !== e.owner || !newer(e, cat.videos[id])) continue;
+    if (cat.videos[id] && cat.videos[id].owner !== e.owner) continue;   // nobody can steal a video
+    if (await verify(e, await userVerifyKey(e.owner))) { cat.videos[id] = e; changed = true; }
   }
   for (const [vid, h] of Object.entries(inc.holders || {})) {
     if (!h || typeof h !== 'object') continue;
@@ -424,7 +554,7 @@ async function mergeCat(inc) {
   }
   return changed;
 }
-const userIsAdmin = u => !!(u && u.admin && u.sig);   // admin flag is only set inside an admin-signed record
+const userIsAdmin = u => !!(u && (u.adm || (u.admin && u.sig && !u.pub)));
 
 let saveTimer = null;
 function save() {
@@ -434,16 +564,24 @@ function save() {
     store.saveCatalog(JSON.stringify({ app: APP, v: 1, profile: me, catalog: cat }, null, 1));
   }, 600);
 }
-async function commit(kind, e, { signed = true } = {}) {
+async function commit(kind, e) {
   e.ts = Date.now(); e.by = me.uid; delete e.sig;
-  if (signed) { if (!signKey) throw new Error('Tohle může jen admin.'); await sign(e); }
+  if (kind === 'group') { if (!signKey) throw new Error('Tohle může jen admin.'); await sign(e); }
+  else await sign(e, userKey);
   if (kind === 'group') cat.group = e; else cat[kind][e.id] = e;
   save(); render(); broadcast();
 }
-async function commitMe(extra = {}) {
-  const u = { id: me.uid, name: me.name, ...extra };
-  if (isAdmin) u.admin = true;
-  await commit('users', u, { signed: isAdmin });
+async function commitMe() {
+  const u = { id: me.uid, name: me.name, pub: userPub };
+  if (isAdmin) u.adm = await signStr(admText(u), signKey);
+  await commit('users', u);
+}
+const canEdit = v => v.owner === me.uid;
+const commitVideo = v => commit('videos', v);
+const DEFAULT_SECS = [['Epizody', 'Hlavní díly'], ['Nejlepší momenty', 'Souboje, vtipy a akce'], ['Novinky', 'Upoutávky a oznámení']];
+async function saveSmp(data, isNew) {
+  await commit('smps', { id: me.uid, owner: me.uid, ...data });
+  if (isNew) { let o = 0; for (const [n, d] of DEFAULT_SECS) await commit('sections', { id: rid(), smp: me.uid, name: n, desc: d, order: o++ }); }
 }
 
 /* ================= Network (PeerJS / WebRTC) ================= */
@@ -468,7 +606,7 @@ function startNet() {
     console.warn('peer', e.type, e);
     if (['network', 'server-error', 'socket-error', 'socket-closed'].includes(e.type)) setNet('connecting');
   });
-  setInterval(connectAll, 10000);
+  setInterval(connectAll, 5000);
 }
 function setNet(s) { netState = s; renderNet(); renderBanners(); }
 function connectAll() {
@@ -479,7 +617,7 @@ function connectAll() {
 }
 function connectTo(uid) {
   if (pending.has(uid)) return;
-  pending.add(uid); setTimeout(() => pending.delete(uid), 10000);
+  pending.add(uid); setTimeout(() => pending.delete(uid), 8000);
   setupConn(peer.connect(pid(uid), { reliable: true, serialization: 'binary' }));
 }
 function setupConn(c) {
@@ -579,65 +717,136 @@ function dlFail(msg) { dl = null; plStatus(msg, null); }
 const COVERS = ['#8a5526', '#6f4a2b', '#a8662b', '#5d3d22', '#7a5a2a', '#6a3f24'];
 const THUMBS = ['#5a3a1f', '#6e4824', '#4a3a2a', '#7a5428'];
 const nameOf = uid => cat.users[uid]?.name || 'neznámý hráč';
-const liveSections = () => Object.values(cat.sections).filter(s => !s.deleted).sort((a, b) => (a.order - b.order) || a.name.localeCompare(b.name, 'cs'));
-const liveVideos = () => Object.values(cat.videos).filter(v => !v.deleted).sort((a, b) => b.created - a.created);
-function videosIn(secId) {
-  const ids = new Set(liveSections().map(s => s.id));
-  return liveVideos().filter(v => secId === '_none' ? !ids.has(v.section) : v.section === secId);
-}
+const isOn = uid => uid === me.uid ? netState === 'ok' : online.has(uid);
+const liveSmps = () => Object.values(cat.smps).filter(x => !x.deleted)
+  .sort((a, b) => (b.owner === me.uid) - (a.owner === me.uid) || isOn(b.owner) - isOn(a.owner) || a.name.localeCompare(b.name, 'cs'));
+const secsOf = smp => Object.values(cat.sections).filter(x => x.smp === smp && !x.deleted).sort((a, b) => (a.order - b.order) || a.name.localeCompare(b.name, 'cs'));
+const vidsOf = smp => Object.values(cat.videos).filter(v => v.smp === smp && !v.deleted).sort((a, b) => b.created - a.created);
+const liveVideos = () => Object.values(cat.videos).filter(v => !v.deleted && cat.smps[v.smp] && !cat.smps[v.smp].deleted);
+const secName = v => cat.sections[v.section] && !cat.sections[v.section].deleted ? cat.sections[v.section].name : 'Nezařazené';
+const okImg = (x, kind) => typeof x === 'string' && x.startsWith(`data:image/jpeg;base64,`);
 function available(v) { return v.owner === me.uid || cat.holders[v.id]?.[me.uid] || sourcesFor(v).length > 0; }
+const query = () => $('#search').value.trim().toLowerCase();
+const matches = (v, q) => !q || (v.title + ' ' + (v.desc || '') + ' ' + secName(v) + ' ' + (cat.smps[v.smp]?.name || '')).toLowerCase().includes(q);
+const plural = (n, a, b, c) => n === 1 ? a : n >= 2 && n <= 4 ? b : c;
+let activeSmp = null;
 
 function render() {
   if (!me) return;
-  document.querySelectorAll('.adminOnly').forEach(e => e.classList.toggle('hidden', !isAdmin));
-  $('#groupName').textContent = (cat.group?.name || 'onion SMP').toUpperCase() + ' · SDÍLENÁ VIDEO KNIHOVNA';
+  $('#groupName').textContent = 'VŠECHNA SMP · ' + (cat.group?.name || 'onion SMP').toUpperCase();
   $('#adminBtn').innerHTML = icon(isAdmin ? 'unlock' : 'lock', 16) + (isAdmin ? 'Admin ✓' : 'Admin');
   $('#folderPill').innerHTML = icon('folder', 15) + `<span></span>`;
   $('#folderPill span').textContent = `${me.name} · ${store.label()}`;
   $('#folderPill').title = store.mode === 'folder' ? 'Tvoje složka s videi' : 'Videa se ukládají v prohlížeči';
-  renderSections(); renderChannel(); renderPlayers(); renderBanners(); renderNet();
+  renderRail(); renderChannel(); renderPlayers(); renderBanners(); renderNet();
 }
-function renderSections() {
-  const host = $('#sections'); host.textContent = '';
-  const secs = liveSections();
-  if (videosIn('_none').length) secs.push({ id: '_none', name: 'Nezařazené', desc: 'Videa bez sekce' });
-  if (!activeSec || !secs.find(s => s.id === activeSec)) activeSec = secs[0]?.id || null;
-  secs.forEach((s, i) => {
-    const n = videosIn(s.id).length;
-    host.append(el('button', { type: 'button', class: 'scard' + (s.id === activeSec ? ' active' : ''), 'aria-pressed': String(s.id === activeSec), onclick: () => { activeSec = s.id; renderSections(); renderChannel(); $('#channel').scrollIntoView({ behavior: 'smooth', block: 'start' }); } },
-      el('div', { class: 'scover', style: `background:${COVERS[i % COVERS.length]}`, text: `SEKCE ${String(i + 1).padStart(2, '0')}` }),
-      el('div', { class: 'sbody' }, el('h3', { text: s.name }), el('div', { class: 'muted', text: s.desc || '' }), el('div', { class: 'cnt', text: `${n} ${n === 1 ? 'video' : n >= 2 && n <= 4 ? 'videa' : 'videí'}` }))));
+function miniBtn(v, i) {
+  const av = available(v);
+  const mt = el('span', { class: 'mt', style: `background:${THUMBS[i % THUMBS.length]}` });
+  if (okImg(v.thumb)) mt.append(el('img', { src: v.thumb, alt: '' }));
+  mt.insertAdjacentHTML('beforeend', icon('play', 16));
+  if (v.dur) mt.append(el('span', { class: 'md', text: fmtDur(v.dur) }));
+  const when = Math.max(0, Math.round((Date.now() - (v.created || v.ts)) / 864e5));
+  return el('button', { type: 'button', class: 'mini' + (av ? '' : ' off'), 'aria-label': `Přehrát ${v.title}`, onclick: () => play(v) }, mt,
+    el('span', { style: 'min-width:0' }, el('b', { text: v.title }), el('small', { text: av ? (when ? `před ${when} ${plural(when, 'dnem', 'dny', 'dny')}` : 'dnes') : `${nameOf(v.owner)} je offline` })));
+}
+function renderRail() {
+  const host = $('#rail'); host.textContent = '';
+  const q = query();
+  const smps = liveSmps();
+  smps.forEach((x, i) => {
+    const vids = vidsOf(x.id), on = isOn(x.owner), mine = x.owner === me.uid;
+    const shown = vids.filter(v => matches(v, q));
+    if (q && !shown.length && !x.name.toLowerCase().includes(q)) return;
+    const head = el('div', { class: 'colhead' + (okImg(x.bg) ? ' img' : '') });
+    if (okImg(x.bg)) head.style.backgroundImage = `url("${x.bg}")`;
+    else { head.style.backgroundColor = COVERS[i % COVERS.length]; head.insertAdjacentHTML('afterbegin', `<span class="wmk">${onionSvg(100, '#fff2e0')}</span>`); }
+    head.append(el('span', { class: 'tag', text: mine ? 'MOJE SMP' : `SMP ${String(i + 1).padStart(2, '0')}` }),
+      el('span', { class: 'state' }, el('span', { class: 'dot' + (on ? ' on' : '') }), on ? 'online' : 'offline'));
+    const title = el('div', { class: 'coltitle' }, el('h2', { html: onionSvg(24, on ? '#e0954a' : '#7a6a5a') }, el('span', { text: x.name })),
+      el('div', { class: 'muted', style: 'font-size:13px;margin-top:4px', text: `Admin: ${nameOf(x.owner)}${x.desc ? ' · ' + x.desc : ''}` }));
+    const mins = Math.round(vids.reduce((a, v) => a + (v.dur || 0), 0) / 60);
+    const stats = el('div', { class: 'stats' }, ...[[vids.length, plural(vids.length, 'video', 'videa', 'videí')], [secsOf(x.id).length, plural(secsOf(x.id).length, 'sekce', 'sekce', 'sekcí')], [mins, 'minut']]
+      .map(([n, l]) => el('div', { class: 'stat' }, el('b', { text: String(n) }), el('span', { text: l }))));
+    const feed = el('div', { class: 'feed' });
+    shown.slice(0, 4).forEach((v, k) => feed.append(el('div', { style: 'display:flex;flex-direction:column;gap:2px' }, el('span', { class: 'secbadge', text: secName(v) }), miniBtn(v, k))));
+    if (!shown.length) feed.append(el('div', { class: 'muted', style: 'padding:10px 8px;font-size:13px', text: q ? 'Nic nenalezeno.' : 'Zatím žádná videa.' }));
+    const foot = el('div', { class: 'colfoot' },
+      el('button', { type: 'button', class: 'btn sec', text: `Otevřít (${vids.length})`, onclick: () => openSmp(x.id) }),
+      mine ? el('button', { type: 'button', class: 'btn', html: icon('upload', 16) + 'Nahrát', onclick: () => openUpload(null) }) : null);
+    host.append(el('section', { class: 'col' + (mine ? ' mine' : ''), 'aria-label': x.name }, head, title, stats, el('div', { class: 'feedlbl', text: 'NEJNOVĚJŠÍ' }), feed, foot));
   });
-  if (isAdmin) host.append(el('button', { type: 'button', class: 'addcard', onclick: () => openSection(null), html: icon('plus', 26) + '<span>Nová sekce</span>' }));
-  if (!secs.length && !isAdmin) host.append(el('div', { class: 'empty', text: cat.group ? 'Zatím tu nejsou žádné sekce.' : 'Čekám na připojení ke skupině…' }));
-  const vids = liveVideos().length;
-  $('#secStats').textContent = `${liveSections().length} sekcí · ${vids} videí`;
+  if (!cat.group) host.append(el('div', { class: 'empty', text: 'Čekám na připojení ke skupině…' }));
+  else if (isAdmin && !cat.smps[me.uid]?.name || isAdmin && cat.smps[me.uid]?.deleted)
+    host.append(el('button', { type: 'button', class: 'newcol', onclick: () => openSmpDlg(true), html: icon('plus', 30) + '<span>Založit moje SMP</span><span class="hint" style="font-weight:400">Tvoje SMP uvidí všichni hráči.</span>' }));
+  else if (!isAdmin)
+    host.append(el('button', { type: 'button', class: 'newcol', onclick: openAdmin, html: icon('lock', 26) + '<span>Chceš vlastní SMP?</span><span class="hint" style="font-weight:400">Zadej kód admina a založ si ho.</span>' }));
 }
+function openSmp(id) { location.hash = 'smp=' + id; }
+function routeFromHash() {
+  const m = /smp=([a-z0-9]+)/.exec(location.hash);
+  const next = m ? m[1] : null;
+  if (next !== activeSmp) { activeSmp = next; activeSec = 'all'; $('#spSearch').value = ''; window.scrollTo(0, 0); }
+  renderChannel();
+}
+window.addEventListener('hashchange', routeFromHash);
 function renderChannel() {
-  const s = activeSec === '_none' ? { id: '_none', name: 'Nezařazené', desc: 'Videa bez sekce' } : cat.sections[activeSec];
-  $('#channel').classList.toggle('hidden', !s);
-  if (!s) return;
-  const idx = liveSections().findIndex(x => x.id === s.id);
-  $('#chTag').textContent = idx >= 0 ? `SEKCE ${String(idx + 1).padStart(2, '0')}` : 'OSTATNÍ';
-  $('#chTitle').textContent = s.name; $('#chDesc').textContent = s.desc || '';
-  $('#chEdit').classList.toggle('hidden', !isAdmin || s.id === '_none');
-  const q = $('#search').value.trim().toLowerCase();
-  const list = videosIn(s.id).filter(v => !q || (v.title + ' ' + (v.desc || '') + ' ' + nameOf(v.owner)).toLowerCase().includes(q));
+  const x = activeSmp && cat.smps[activeSmp];
+  const show = !!(x && !x.deleted);
+  $('#home').classList.toggle('hidden', show);
+  $('#smpPage').classList.toggle('hidden', !show);
+  if (!show) return;
+  const mine = x.owner === me.uid, on = isOn(x.owner);
+  document.querySelectorAll('.ownerOnly').forEach(e => e.classList.toggle('hidden', !mine));
+  const secs = secsOf(x.id), all = vidsOf(x.id), ids = new Set(secs.map(s => s.id));
+  if (activeSec !== 'all' && activeSec !== '_none' && !ids.has(activeSec)) activeSec = 'all';
+  $('#chEdit').classList.toggle('hidden', !mine || activeSec === 'all' || activeSec === '_none');
+  // banner
+  const bn = $('#spBanner'); bn.classList.toggle('img', okImg(x.bg));
+  bn.style.backgroundImage = okImg(x.bg) ? `url("${x.bg}")` : 'none';
+  bn.querySelector('.wmk')?.remove();
+  if (!okImg(x.bg)) bn.insertAdjacentHTML('afterbegin', `<span class="wmk">${onionSvg(320, '#fff2e0')}</span>`);
+  $('#spState').innerHTML = `<span class="dot${on ? ' on' : ''}"></span>${on ? 'online' : 'offline'}`;
+  $('#spName').textContent = x.name;
+  $('#spSub').textContent = `Admin: ${nameOf(x.owner)}${x.desc ? ' · ' + x.desc : ''}`;
+  const mins = Math.round(all.reduce((a, v) => a + (v.dur || 0), 0) / 60);
+  const st = $('#spStats'); st.textContent = '';
+  for (const [n, l] of [[all.length, plural(all.length, 'video', 'videa', 'videí')], [secs.length, plural(secs.length, 'sekce', 'sekce', 'sekcí')], [mins, 'minut']]) st.append(el('div', {}, el('b', { text: String(n) }), el('span', { text: l })));
+  // tabs
+  const chips = $('#chips'); chips.textContent = '';
+  const opts = [['all', 'Vše', all.length], ...secs.map(s => [s.id, s.name, all.filter(v => v.section === s.id).length])];
+  const orphans = all.filter(v => !ids.has(v.section)).length;
+  if (orphans) opts.push(['_none', 'Nezařazené', orphans]);
+  for (const [id, n, c] of opts) chips.append(el('button', { type: 'button', 'aria-pressed': String(id === activeSec), text: `${n} (${c})`, onclick: () => { activeSec = id; renderChannel(); } }));
+  const cur = cat.sections[activeSec];
+  $('#chTitle').textContent = activeSec === 'all' ? 'Všechna videa' : activeSec === '_none' ? 'Nezařazené' : cur.name;
+  $('#chDesc').textContent = activeSec === 'all' ? '' : activeSec === '_none' ? 'Videa bez sekce' : (cur.desc || '');
+  // grid
+  const q = $('#spSearch').value.trim().toLowerCase();
+  const list = all.filter(v => (activeSec === 'all' || (activeSec === '_none' ? !ids.has(v.section) : v.section === activeSec)) && matches(v, q));
   const host = $('#videos'); host.textContent = '';
+  $('#empty').textContent = q ? 'Nic nenalezeno.' : mine ? 'Zatím tu nic není. Nahraj první video tlačítkem nahoře.' : 'Tady zatím nejsou žádná videa.';
   $('#empty').classList.toggle('hidden', list.length > 0);
   list.forEach((v, i) => {
     const av = available(v);
     const th = el('button', { type: 'button', class: 'thumb', style: `background:${THUMBS[i % THUMBS.length]}`, 'aria-label': `Přehrát ${v.title}`, onclick: () => play(v) });
-    if (typeof v.thumb === 'string' && v.thumb.startsWith('data:image/jpeg;base64,')) th.append(el('img', { src: v.thumb, alt: '' }));
+    if (okImg(v.thumb)) th.append(el('img', { src: v.thumb, alt: '' }));
     th.append(av ? el('span', { class: 'play', html: icon('play', 20), style: 'color:var(--onaccent)' }) : el('span', { class: 'offtag', text: `${nameOf(v.owner)} je offline` }));
     if (v.dur) th.append(el('span', { class: 'dur', text: fmtDur(v.dur) }));
-    const actions = isAdmin ? el('div', { class: 'vactions' }, el('button', { type: 'button', class: 'btn sec small', onclick: () => openEdit(v), html: icon('edit', 14) + 'Upravit' })) : null;
+    const actions = canEdit(v) ? el('div', { class: 'vactions' }, el('button', { type: 'button', class: 'btn sec small', onclick: () => openEdit(v), html: icon('edit', 14) + 'Upravit' })) : null;
     host.append(el('article', { class: 'vcard' + (av ? '' : ' off') }, th,
       el('div', { class: 'vinfo' }, el('h4', { text: v.title }),
         v.desc ? el('div', { class: 'muted', style: 'font-size:13px', text: v.desc.length > 90 ? v.desc.slice(0, 90) + '…' : v.desc }) : null,
-        el('div', { class: 'vmeta', html: icon('folder', 14) }, el('span', { text: `Složka: ${nameOf(v.owner)}${v.size ? ' · ' + fmtSize(v.size) : ''}` })),
+        el('div', { class: 'vmeta' }, el('span', { class: 'secbadge', style: 'margin:0', text: secName(v) }), el('span', { text: [fmtDur(v.dur), v.size ? fmtSize(v.size) : ''].filter(Boolean).join(' · ') })),
         actions)));
   });
+  // aside
+  $('#spAbout').textContent = (x.desc ? x.desc + '\n\n' : '') + `Videa leží ve složce hráče ${nameOf(x.owner)}. Přehrát jdou, když je online on nebo někdo, kdo si je už stáhl.`;
+  $('#spAdmin').innerHTML = `<div style="display:flex;align-items:center;gap:10px">${onionSvg(36, on ? '#e0954a' : '#7a6a5a')}<div><div style="font-weight:700"></div><div style="font-size:12px;color:${on ? 'var(--ok)' : 'var(--muted)'}">${on ? '● online · videa jdou přehrát' : '○ offline · přehrát jdou jen stažená videa'}</div></div></div>`;
+  $('#spAdmin div div div').textContent = nameOf(x.owner) + (mine ? ' (ty)' : '');
+  const rec = $('#spRecent'); rec.textContent = '';
+  all.slice(0, 3).forEach((v, k) => rec.append(miniBtn(v, k)));
+  if (!all.length) rec.append(el('div', { class: 'muted', style: 'font-size:13px', text: 'Zatím nic.' }));
 }
 function renderPlayers() {
   const host = $('#players'); host.textContent = '';
@@ -645,10 +854,11 @@ function renderPlayers() {
   for (const u of users) {
     const on = u.id === me.uid ? netState === 'ok' : online.has(u.id);
     const n = liveVideos().filter(v => v.owner === u.id).length;
+    const sm = cat.smps[u.id] && !cat.smps[u.id].deleted ? cat.smps[u.id].name : null;
     host.append(el('div', { class: 'player' },
       el('span', { class: 'dot' + (on ? ' on' : '') }),
       el('div', {}, el('div', { style: 'font-weight:700' }, u.name + (u.id === me.uid ? ' (ty)' : ''), ' ', userIsAdmin(u) ? el('span', { class: 'badge', text: 'admin' }) : null),
-        el('div', { class: 'muted', style: 'font-size:12px', text: `${on ? 'online' : 'offline'} · ${n} videí` }))));
+        el('div', { class: 'muted', style: 'font-size:12px', text: `${on ? 'online' : 'offline'} · ${sm ? sm + ' · ' : ''}${n} videí` }))));
   }
 }
 function renderNet() {
@@ -658,9 +868,9 @@ function renderNet() {
   p.lastChild.textContent = txt;
 }
 function renderBanners() {
-  const host = $('#banners'); host.textContent = '';
+  const hosts = [$('#banners'), $('#spBanners')]; hosts.forEach(h => h.textContent = '');
   if (!me) return;
-  const add = (msg, btnText, fn, err) => host.append(el('div', { class: 'banner' + (err ? ' err' : '') }, el('span', { text: msg }), btnText ? el('button', { type: 'button', class: 'btn small', text: btnText, onclick: fn }) : null));
+  const add = (msg, btnText, fn, err) => hosts.forEach(host => host.append(el('div', { class: 'banner' + (err ? ' err' : '') }, el('span', { text: msg }), btnText ? el('button', { type: 'button', class: 'btn small', text: btnText, onclick: fn }) : null)));
   if (store.mode === 'folder' && !store.ready)
     add(`Aplikace potřebuje znovu povolit přístup ke tvé složce „${store.dir.name}“, jinak ostatní nemůžou přehrávat tvoje videa.`, 'Povolit přístup', async () => { if (await store.regrant()) { toast('Přístup ke složce povolen.'); render(); } });
   if (!cat.group) add(`Připojuji se ke skupině… Hráč, od kterého máš pozvánku, musí mít aplikaci otevřenou.`);
@@ -748,7 +958,7 @@ $('#setupForm').onsubmit = async e => {
       if (!inv) throw new Error('Vlož celý odkaz pozvánky od jiného hráče.');
       me = { uid: rid(), name, gid: inv.gid, inviter: inv.inviter };
       await idb.set('kv', 'me', me);
-      cat.users[me.uid] = { id: me.uid, name, ts: Date.now(), by: me.uid };
+      await loadUserKey(); await commitMe();
     } else {
       const code = $('#sCode').value;
       if (code.length < 4) throw new Error('Kód admina musí mít aspoň 4 znaky.');
@@ -760,18 +970,14 @@ $('#setupForm').onsubmit = async e => {
       await idb.set('kv', 'adminKey', priv); await idb.set('kv', 'me', me);
       const g = { id: me.gid, name: $('#sGroup').value.trim() || 'onion SMP', pub, keyEnc: await wrapPriv(priv, code), ts: Date.now(), by: me.uid };
       cat.group = await sign(g);
-      let order = 0;
-      for (const [n, d] of [['Epizody', 'Hlavní díly'], ['Nejlepší momenty', 'Souboje, vtipy a akce'], ['Novinky', 'Upoutávky a oznámení']]) {
-        const s = { id: rid(), name: n, desc: d, order: order++, ts: Date.now(), by: me.uid };
-        cat.sections[s.id] = await sign(s);
-      }
-      cat.users[me.uid] = await sign({ id: me.uid, name, admin: true, ts: Date.now(), by: me.uid });
+      await loadUserKey(); await commitMe();
+      await saveSmp({ name: `${name} SMP`, desc: '', bg: null }, true);
     }
     save();
     history.replaceState(null, '', location.pathname + location.search);
     $('#dlgSetup').close();
     start();
-    if (setupMode === 'create') setTimeout(openSettings, 400);
+    if (setupMode === 'create') setTimeout(() => openSmpDlg(false), 400);
   } catch (ex) { err.textContent = ex.message; }
   finally { $('#sGo').disabled = false; }
 };
@@ -794,7 +1000,7 @@ $('#adminForm').onsubmit = async e => {
       try { priv = await unwrapPriv(cat.group.keyEnc, $('#aCode').value); } catch { throw new Error('Špatný kód.'); }
       await setSignKey(priv); isAdmin = true; await idb.set('kv', 'adminKey', priv);
       await commitMe();
-      $('#dlgAdmin').close(); toast('Teď máš práva admina.');
+      $('#dlgAdmin').close(); toast('Teď máš práva admina. Můžeš si založit vlastní SMP.');
     } else {
       const a = $('#aNew').value;
       if (a.length < 4) throw new Error('Nový kód musí mít aspoň 4 znaky.');
@@ -824,29 +1030,31 @@ $('#secForm').onsubmit = async e => {
   e.preventDefault();
   const name = $('#secName').value.trim(); if (!name) return;
   try {
-    const s = editingSec ? { ...editingSec } : { id: rid(), order: Math.max(-1, ...liveSections().map(x => x.order)) + 1 };
+    const s = editingSec ? { ...editingSec } : { id: rid(), smp: me.uid, order: Math.max(-1, ...secsOf(me.uid).map(x => x.order)) + 1 };
     s.name = name; s.desc = $('#secDesc').value.trim();
     await commit('sections', s);
     activeSec = s.id; $('#dlgSection').close(); render();
   } catch (ex) { $('#secErr').textContent = ex.message; }
 };
 $('#secDel').onclick = async () => {
-  const n = videosIn(editingSec.id).length;
+  const n = vidsOf(me.uid).filter(v => v.section === editingSec.id).length;
   if (!confirm(n ? `Smazat sekci „${editingSec.name}“? ${n} videí se přesune do „Nezařazené“.` : `Smazat sekci „${editingSec.name}“?`)) return;
   await commit('sections', { ...editingSec, deleted: true });
-  activeSec = null; $('#dlgSection').close(); render();
+  activeSec = 'all'; $('#dlgSection').close(); render();
 };
 
 /* ================= Upload ================= */
 function fillSecSelect(sel, value) {
   sel.textContent = '';
-  for (const s of liveSections()) sel.append(el('option', { value: s.id, text: s.name }));
+  const secs = secsOf(me.uid);
+  for (const s of secs) sel.append(el('option', { value: s.id, text: s.name }));
   sel.append(el('option', { value: '_none', text: 'Nezařazené' }));
-  sel.value = value && (cat.sections[value] || value === '_none') ? value : (liveSections()[0]?.id || '_none');
+  sel.value = value && secs.find(s => s.id === value) ? value : (secs[0]?.id || '_none');
 }
 function openUpload(secId) {
+  if (!cat.smps[me.uid] || cat.smps[me.uid].deleted) return toast('Nejdřív si založ vlastní SMP.');
   $('#upForm').reset(); $('#upErr').textContent = ''; $('#upBar').classList.add('hidden');
-  fillSecSelect($('#upSec'), secId || activeSec);
+  fillSecSelect($('#upSec'), secId || (activeSmp === me.uid ? activeSec : null));
   $('#upWhere').textContent = store.mode === 'folder' ? `Video se zkopíruje do tvé složky „${store.dir.name}“ (podsložka videos).` : 'Video se uloží v tomto prohlížeči.';
   $('#dlgUpload').showModal();
 }
@@ -872,6 +1080,7 @@ function probe(file) {
 $('#upForm').onsubmit = async e => {
   e.preventDefault(); const err = $('#upErr'); err.textContent = '';
   const f = $('#upFile').files[0]; if (!f) return;
+  if (!cat.group) return err.textContent = 'Nejdřív se musíš připojit ke skupině.';
   $('#upGo').disabled = true; $('#upBar').classList.remove('hidden'); $('#upBar div').style.width = '25%';
   try {
     const info = await probe(f);
@@ -879,8 +1088,8 @@ $('#upForm').onsubmit = async e => {
     const id = rid(); const ext = (/\.[a-z0-9]{2,5}$/i.exec(f.name)?.[0] || '.mp4').toLowerCase();
     await store.put('videos', id, f, ext);
     $('#upBar div').style.width = '90%';
-    await commit('videos', { id, owner: me.uid, title: $('#upTitle').value.trim(), desc: $('#upDesc').value.trim(), section: $('#upSec').value, size: f.size, type: f.type || 'video/mp4', ext, dur: info.dur || 0, thumb: info.thumb || null, created: Date.now() });
-    activeSec = $('#upSec').value; $('#dlgUpload').close(); render(); toast('Video přidáno. Ostatní ho uvidí, jakmile budou online.');
+    await commitVideo({ id, owner: me.uid, smp: me.uid, title: $('#upTitle').value.trim(), desc: $('#upDesc').value.trim(), section: $('#upSec').value, size: f.size, type: f.type || 'video/mp4', ext, dur: info.dur || 0, thumb: info.thumb || null, created: Date.now() });
+    $('#dlgUpload').close(); render(); toast('Video přidáno. Ostatní ho uvidí, jakmile budou online.');
   } catch (ex) { err.textContent = ex.name === 'QuotaExceededError' ? 'Video je na úložiště prohlížeče příliš velké.' : ex.message; }
   finally { $('#upGo').disabled = false; }
 };
@@ -894,13 +1103,54 @@ function openEdit(v) {
 }
 $('#edForm').onsubmit = async e => {
   e.preventDefault();
-  await commit('videos', { ...editingVid, title: $('#edTitle').value.trim(), desc: $('#edDesc').value.trim(), section: $('#edSec').value });
+  await commitVideo({ ...editingVid, title: $('#edTitle').value.trim(), desc: $('#edDesc').value.trim(), section: $('#edSec').value });
   $('#dlgEdit').close();
 };
 $('#edDel').onclick = async () => {
   if (!confirm(`Smazat video „${editingVid.title}“ z knihovny? Soubor ve složce autora zůstane.`)) return;
-  await commit('videos', { ...editingVid, deleted: true });
+  await commitVideo({ ...editingVid, deleted: true });
   $('#dlgEdit').close();
+};
+
+/* ================= My SMP ================= */
+let smpBg = null, smpNew = false;
+function showBg() { const pv = $('#smpPrev'); pv.style.backgroundImage = smpBg ? `url("${smpBg}")` : 'none'; }
+function openSmpDlg(isNew) {
+  const x = cat.smps[me.uid]; smpNew = isNew || !x || x.deleted;
+  $('#smpTitle').textContent = smpNew ? 'Založit moje SMP' : 'Upravit moje SMP';
+  $('#smpName').value = !smpNew ? x.name : `${me.name} SMP`; $('#smpDesc').value = !smpNew ? (x.desc || '') : '';
+  smpBg = !smpNew ? (x.bg || null) : null; showBg(); $('#smpErr').textContent = '';
+  $('#smpDel').classList.toggle('hidden', smpNew);
+  $('#dlgSmp').showModal();
+}
+async function makeBg(file) {
+  const img = await createImageBitmap(file); const W = 640, H = 256;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const k = Math.max(W / img.width, H / img.height), w = img.width * k, h = img.height * k;
+  c.getContext('2d').drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+  return c.toDataURL('image/jpeg', 0.72);
+}
+$('#smpBg').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { smpBg = await makeBg(f); showBg(); } catch { $('#smpErr').textContent = 'Tenhle obrázek nejde načíst.'; }
+  e.target.value = '';
+};
+$('#smpBgDel').onclick = () => { smpBg = null; showBg(); };
+$('#smpForm').onsubmit = async e => {
+  e.preventDefault(); const err = $('#smpErr'); err.textContent = '';
+  if (!isAdmin) return err.textContent = 'Vlastní SMP si může založit jen admin.';
+  const name = $('#smpName').value.trim(); if (!name) return;
+  $('#smpGo').disabled = true;
+  try {
+    await saveSmp({ name, desc: $('#smpDesc').value.trim(), bg: smpBg }, smpNew);
+    $('#dlgSmp').close(); toast(smpNew ? 'SMP založeno. Ostatní ho uvidí, jakmile budou online.' : 'SMP uloženo.');
+  } catch (ex) { err.textContent = ex.message; }
+  finally { $('#smpGo').disabled = false; }
+};
+$('#smpDel').onclick = async () => {
+  if (!confirm('Smazat celé tvoje SMP? Zmizí ze seznamu u všech hráčů. Soubory ve tvé složce zůstanou.')) return;
+  await commit('smps', { ...cat.smps[me.uid], deleted: true });
+  $('#dlgSmp').close(); location.hash = ''; render();
 };
 
 /* ================= Settings ================= */
@@ -948,26 +1198,35 @@ $('#adminBtn').onclick = openAdmin;
 $('#settingsBtn').innerHTML = icon('gear', 18);
 $('#settingsBtn').onclick = openSettings;
 $('#folderPill').onclick = openSettings;
-$('#heroUpload').innerHTML = icon('upload', 16) + 'Nahrát video'; $('#heroUpload').onclick = () => openUpload();
-$('#chUpload').innerHTML = icon('upload', 16) + 'Nahrát do sekce'; $('#chUpload').onclick = () => openUpload(activeSec);
-$('#heroSection').innerHTML = icon('plus', 16) + 'Nová sekce'; $('#heroSection').onclick = () => openSection(null);
-$('#heroInvite').innerHTML = icon('link', 16) + 'Pozvat hráče'; $('#heroInvite').onclick = openSettings;
+$('#chUpload').innerHTML = icon('upload', 16) + 'Nahrát video'; $('#chUpload').onclick = () => openUpload(activeSec);
+$('#chNewSec').onclick = () => openSection(null);
 $('#chEdit').onclick = () => openSection(cat.sections[activeSec]);
-$('#search').oninput = renderChannel;
+$('#chSmp').onclick = () => openSmpDlg(false);
+$('#chClose').onclick = () => { location.hash = ''; };
+$('#spSearch').oninput = renderChannel;
+$('#heroInvite').innerHTML = icon('link', 16) + 'Pozvat hráče'; $('#heroInvite').onclick = openSettings;
+$('#railL').onclick = () => $('#rail').scrollBy({ left: -320, behavior: 'smooth' });
+$('#railR').onclick = () => $('#rail').scrollBy({ left: 320, behavior: 'smooth' });
+$('#search').oninput = () => { renderRail(); renderChannel(); };
 $('#logoSlot').innerHTML = onionSvg(40);
 $('#logoSlot').style.display = 'inline-flex';
 
-function start() { render(); startNet(); }
+function start() { routeFromHash(); render(); startNet(); }
 
 (async function boot() {
   await store.init();
   me = await idb.get('kv', 'me');
   if (!me) return showSetup();
   cat = (await idb.get('kv', 'cat')) || cat;
+  cat.smps = cat.smps || {};
+  for (const k of ['sections', 'videos']) for (const [id, e] of Object.entries(cat[k])) if (!e.smp) delete cat[k][id];   // older version without SMPs
   if (cat.group) verifyKey = await importPub(cat.group.pub);
   const priv = await idb.get('kv', 'adminKey');
   if (priv) { await setSignKey(priv); isAdmin = true; }
+  await loadUserKey();
   start();
+  const mine = cat.users[me.uid];
+  if (!mine?.pub || (isAdmin && !mine.adm)) await commitMe();   // older profiles get their own key
 })();
 </script>
 </body>
