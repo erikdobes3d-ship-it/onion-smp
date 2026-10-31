@@ -499,7 +499,7 @@ async function verify(o, key = verifyKey) {
 
 /* ================= State & catalog ================= */
 let me = null;                 // {uid, name, gid}
-let cat = { group: null, users: {}, grants: {}, requests: {}, smps: {}, sections: {}, videos: {}, holders: {} };
+let cat = { group: null, users: {}, removed: {}, grants: {}, requests: {}, smps: {}, sections: {}, videos: {}, holders: {} };
 let isAdmin = false, activeSec = null, netState = 'off';
 const gid = () => me && me.gid;
 
@@ -534,6 +534,10 @@ async function mergeCat(inc) {
     cat.users[id] = u; changed = true;
   }
   // requests for an own SMP (signed by the player) and admin decisions (signed with the group key)
+  for (const [id, e] of Object.entries(inc.removed || {})) {   // players removed by an admin
+    if (!e || e.id !== id || !newer(e, cat.removed[id])) continue;
+    if (await verify(e)) { cat.removed[id] = e; changed = true; }
+  }
   for (const [id, e] of Object.entries(inc.requests || {})) {
     if (!e || e.id !== id || e.by !== id || !newer(e, cat.requests[id])) continue;
     if (await verify(e, await userVerifyKey(id))) { cat.requests[id] = e; changed = true; }
@@ -567,6 +571,9 @@ async function mergeCat(inc) {
   return changed;
 }
 const userIsAdmin = u => !!(u && (u.adm || (u.admin && u.sig && !u.pub)));
+// a player is hidden when he deleted his profile, or an admin removed him (and he has not been active since)
+const activeUser = u => !!u && !u.gone && !(cat.removed?.[u.id] && cat.removed[u.id].ts > u.ts);
+const activeIds = () => Object.values(cat.users).filter(activeUser).map(u => u.id);
 function canOwnSmp(uid) {
   const u = cat.users[uid]; if (!u) return false;
   if (userIsAdmin(u)) return true;
@@ -586,7 +593,7 @@ function save() {
 }
 async function commit(kind, e) {
   e.ts = Date.now(); e.by = me.uid; delete e.sig;
-  if (kind === 'group' || kind === 'grants') { if (!signKey) throw new Error('Tohle může jen admin.'); await sign(e); }
+  if (kind === 'group' || kind === 'grants' || kind === 'removed') { if (!signKey) throw new Error('Tohle může jen admin.'); await sign(e); }
   else await sign(e, userKey);
   if (kind === 'group') cat.group = e; else cat[kind][e.id] = e;
   save(); render(); broadcast();
@@ -653,7 +660,7 @@ function setNet(s) { netState = s; if (me) render(); }
 const inviters = () => [...(me.inviters || []), ...(me.inviter ? [me.inviter] : [])];
 function connectAll() {
   if (!peer || peer.disconnected || peer.destroyed) return;
-  const targets = new Set(Object.keys(cat.users));
+  const targets = new Set(activeIds());
   if (!cat.group) {                                          // not synced yet: try the invite and the lobby
     for (const u of inviters()) targets.add(u);
     for (let k = 0; k < LOBBY_N; k++) if (!conns.has('L' + k) && !pending.has('L' + k)) {
@@ -820,7 +827,7 @@ const COVERS = ['#8a5526', '#6f4a2b', '#a8662b', '#5d3d22', '#7a5a2a', '#6a3f24'
 const THUMBS = ['#5a3a1f', '#6e4824', '#4a3a2a', '#7a5428'];
 const nameOf = uid => cat.users[uid]?.name || 'neznámý hráč';
 const isOn = uid => uid === me.uid ? netState === 'ok' : online.has(uid);
-const liveSmps = () => Object.values(cat.smps).filter(x => !x.deleted && canOwnSmp(x.owner))
+const liveSmps = () => Object.values(cat.smps).filter(x => !x.deleted && canOwnSmp(x.owner) && activeUser(cat.users[x.owner]))
   .sort((a, b) => (b.owner === me.uid) - (a.owner === me.uid) || isOn(b.owner) - isOn(a.owner) || a.name.localeCompare(b.name, 'cs'));
 const secsOf = smp => Object.values(cat.sections).filter(x => x.smp === smp && !x.deleted).sort((a, b) => (a.order - b.order) || a.name.localeCompare(b.name, 'cs'));
 const vidsOf = smp => Object.values(cat.videos).filter(v => v.smp === smp && !v.deleted).sort((a, b) => b.created - a.created);
@@ -959,7 +966,7 @@ function renderChannel() {
 }
 function renderPlayers() {
   const host = $('#players'); host.textContent = '';
-  const users = Object.values(cat.users).sort((a, b) => a.name.localeCompare(b.name, 'cs'));
+  const users = Object.values(cat.users).filter(u => activeUser(u) || u.id === me.uid).sort((a, b) => a.name.localeCompare(b.name, 'cs'));
   for (const u of users) {
     const on = u.id === me.uid ? netState === 'ok' : online.has(u.id);
     const n = liveVideos().filter(v => v.owner === u.id).length;
@@ -967,11 +974,19 @@ function renderPlayers() {
     host.append(el('div', { class: 'player' },
       el('span', { class: 'dot' + (on ? ' on' : '') }),
       el('div', {}, el('div', { style: 'font-weight:700' }, u.name + (u.id === me.uid ? ' (ty)' : ''), ' ', userIsAdmin(u) ? el('span', { class: 'badge', text: 'admin' }) : null),
-        el('div', { class: 'muted', style: 'font-size:12px', text: `${on ? 'online' : 'offline'} · ${sm ? sm + ' · ' : ''}${n} videí` }))));
+        el('div', { class: 'muted', style: 'font-size:12px', text: `${on ? 'online' : 'offline'} · ${sm ? sm + ' · ' : ''}${n} videí` })),
+      isAdmin && u.id !== me.uid ? el('button', { type: 'button', class: 'btn ghost small', 'aria-label': `Odebrat hráče ${u.name}`, title: 'Odebrat hráče', text: '×', style: 'min-height:32px;padding:0 10px', onclick: () => removePlayer(u) }) : null));
   }
 }
+async function removePlayer(u) {
+  const sm = cat.smps[u.id] && !cat.smps[u.id].deleted;
+  if (!confirm(`Odebrat hráče ${u.name} ze seznamu?${sm ? ' Zmizí i jeho SMP.' : ''} Když se znovu připojí, objeví se zase.`)) return;
+  await commit('removed', { id: u.id });
+  if (sm) await commit('grants', { id: u.id, ok: false });
+  toast(`${u.name} odebrán.`);
+}
 function renderNet() {
-  const p = $('#netPill'); const others = Object.keys(cat.users).filter(u => u !== me?.uid).length;
+  const p = $('#netPill'); const others = activeIds().filter(u => u !== me?.uid).length;
   const txt = { ok: `${[...online].filter(u => cat.users[u] && u !== me.uid).length} z ${others} hráčů online`, connecting: 'Připojuji…', dup: 'Otevřeno jinde', nolib: 'Bez sítě', off: 'Offline' }[netState];
   p.innerHTML = `<span class="dot${netState === 'ok' ? ' on' : ''}"></span><span></span>`;
   p.lastChild.textContent = txt;
@@ -1299,7 +1314,7 @@ $('#smpDel').onclick = async () => {
 /* ================= Settings ================= */
 // the invite lists several players (online first), so a newcomer can join through whoever is online
 const inviteLink = () => {
-  const others = Object.keys(cat.users).filter(u => u !== me.uid).sort((a, b) => online.has(b) - online.has(a)).slice(0, 9);
+  const others = activeIds().filter(u => u !== me.uid).sort((a, b) => online.has(b) - online.has(a)).slice(0, 9);
   return `${location.origin}${location.pathname}${location.search}#join=${gid()}.${[me.uid, ...others].join('.')}`;
 };
 function openSettings() {
@@ -1337,6 +1352,7 @@ $('#stImport').onchange = async e => {
 };
 $('#stReset').onclick = async () => {
   if (!confirm('Smazat profil a katalog z tohoto prohlížeče? Videa ve tvé složce zůstanou.')) return;
+  if (cat.group && cat.users[me.uid]) { try { await commit('users', { ...cat.users[me.uid], gone: true }); await sleep(1200); } catch { } }   // tell the others
   await idb.clear('kv'); await idb.clear('files'); location.reload();
 };
 
@@ -1366,7 +1382,7 @@ function start() { routeFromHash(); render(); startNet(); setInterval(() => { if
   me = await idb.get('kv', 'me');
   if (!me) return showSetup();
   cat = (await idb.get('kv', 'cat')) || cat;
-  cat.smps = cat.smps || {}; cat.grants = cat.grants || {}; cat.requests = cat.requests || {};
+  cat.smps = cat.smps || {}; cat.removed = cat.removed || {}; cat.grants = cat.grants || {}; cat.requests = cat.requests || {};
   for (const k of ['sections', 'videos']) for (const [id, e] of Object.entries(cat[k])) if (!e.smp) delete cat[k][id];   // older version without SMPs
   if (cat.group) verifyKey = await importPub(cat.group.pub);
   const priv = await idb.get('kv', 'adminKey');
