@@ -3,21 +3,31 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>onion SMP</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 12 C44 28 18 38 18 63 C18 83 33 94 50 94 C67 94 82 83 82 63 C82 38 56 28 50 12Z' fill='%23e0954a'/%3E%3Cpath d='M50 12 C49 6 46 3 41 2 M50 12 C52 6 56 3 61 4' fill='none' stroke='%238fbf5a' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<title>minecraft SMP</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1 15 4.5 8 8 1 4.5Z' fill='%23f2c94c'/%3E%3Cpath d='M1 4.5 8 8 8 15 1 11.5Z' fill='%23d9a520'/%3E%3Cpath d='M8 8 15 4.5 15 11.5 8 15Z' fill='%23a87a12'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap">
 <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
 <style>
-:root{--bg:#17110c;--surface:#221912;--surface2:#2e2218;--border:#4a3826;--text:#fbf3e8;--muted:#c9b29a;--accent:#e8a14b;--onaccent:#1b1108;--header:#1c150f;--hero:#2a1e14;--ok:#8fd18b;--danger:#e0705a;--r1:12px;--r2:16px;
+:root{--headerA:rgba(28,21,15,.94);--field:#140e09;--fieldb:#5a4630;--panel:rgba(34,25,18,.75);--cover:#8a5526;--thumb:#5a3a1f;--bnbg:#6f4a2b;--b1:#f2c94c;--b2:#d9a520;--b3:#a87a12;--bg:#17110c;--surface:#221912;--surface2:#2e2218;--border:#4a3826;--text:#fbf3e8;--muted:#c9b29a;--accent:#e8a14b;--onaccent:#1b1108;--header:#1c150f;--hero:#2a1e14;--ok:#8fd18b;--danger:#e0705a;--r1:12px;--r2:16px;
  --font:"Outfit",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+/* colour variants (the default "Zlatá" is :root above) */
+html[data-theme]{--headerA:color-mix(in srgb,var(--header) 94%,transparent);--field:color-mix(in srgb,var(--bg) 65%,#000);--fieldb:var(--border);--panel:color-mix(in srgb,var(--surface) 75%,transparent);--cover:color-mix(in srgb,var(--accent) 50%,#000);--thumb:color-mix(in srgb,var(--accent) 28%,var(--bg));--bnbg:color-mix(in srgb,var(--accent) 38%,#000)}
+html[data-theme=smaragd]{--bg:#0f1a12;--surface:#17251a;--surface2:#1f3223;--border:#34503a;--text:#eef8ee;--muted:#a9c4ad;--accent:#5fc46a;--onaccent:#0b1a0d;--header:#122016;--hero:#1a2c1e;--b1:#6fbf4a;--b2:#8a5a33;--b3:#6e4626}
+html[data-theme=diamant]{--bg:#0d1620;--surface:#142130;--surface2:#1b2c40;--border:#2f4a66;--text:#eef6fc;--muted:#a8c0d6;--accent:#5ad1e6;--onaccent:#06161b;--header:#101b28;--hero:#172739;--b1:#8ff0f5;--b2:#4cc3d0;--b3:#2a8f9c}
+html[data-theme=redstone]{--bg:#1a0d0d;--surface:#251414;--surface2:#321c1c;--border:#553030;--text:#fdeeee;--muted:#d4abab;--accent:#ff6a55;--onaccent:#1f0806;--header:#1f1010;--hero:#2c1717;--b1:#ff6b5a;--b2:#c83a2e;--b3:#8e231b}
+html[data-theme=ametyst]{--bg:#140f1e;--surface:#1d162b;--surface2:#271e3a;--border:#43345e;--text:#f5f0ff;--muted:#bfb0dc;--accent:#b48cff;--onaccent:#150a26;--header:#181226;--hero:#221a35;--b1:#c9a6ff;--b2:#9a6ae0;--b3:#6a40a8}
+.themes{display:flex;flex-wrap:wrap;gap:8px}
+.themes button{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border-radius:var(--r1);border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-weight:600}
+.themes button[aria-pressed=true]{border:2px solid var(--accent)}
+.themes i{width:18px;height:18px;border-radius:5px;display:inline-block}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 var(--font)}
 body{min-height:100vh;overflow-x:hidden}
 button,input,select,textarea{font:inherit;color:inherit}
 a{color:var(--accent)}
 .wm{position:fixed;right:-80px;top:70px;width:520px;height:520px;opacity:.07;pointer-events:none;z-index:0}
-header{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:12px 28px;background:rgba(28,21,15,.94);border-bottom:1px solid var(--border);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+header{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:12px 28px;background:var(--headerA);border-bottom:1px solid var(--border);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .brand{display:flex;align-items:center;gap:12px;font-size:24px;font-weight:800}.brand span{color:var(--accent)}
 .hright{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .pill{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 12px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);font-size:13px;white-space:nowrap}
@@ -50,7 +60,7 @@ main{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:24px 24p
 .secbadge{align-self:flex-start;margin-left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--surface2);color:var(--accent)}
 .mini{display:flex;gap:10px;align-items:center;width:100%;padding:6px;border:0;border-radius:10px;background:transparent;text-align:left;cursor:pointer}
 .mini:hover{background:var(--surface2)}
-.mini .mt{position:relative;flex:none;width:96px;height:54px;border-radius:8px;background:#5a3a1f;display:grid;place-items:center;overflow:hidden;color:#fff2e0}
+.mini .mt{position:relative;flex:none;width:96px;height:54px;border-radius:8px;background:var(--thumb);display:grid;place-items:center;overflow:hidden;color:#fff2e0}
 .mini .mt img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .mini .mt svg{position:relative}
 .mini .md{position:absolute;right:4px;bottom:3px;font-size:10px;font-weight:700;padding:0 4px;border-radius:4px;background:rgba(0,0,0,.7);color:#fff}
@@ -64,7 +74,7 @@ main{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:24px 24p
 .chips button{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-weight:600}
 .chips button[aria-pressed=true]{background:var(--accent);color:var(--onaccent);border-color:var(--accent)}
 #smpPage{position:relative;z-index:1}
-.bn{position:relative;height:280px;overflow:hidden;background:#6f4a2b center/cover}
+.bn{position:relative;height:280px;overflow:hidden;background:var(--bnbg) center/cover}
 .bn.img::before{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.72),rgba(0,0,0,.1) 60%,rgba(0,0,0,.35))}
 .bn .wmk{position:absolute;right:4%;top:-30px;opacity:.15}
 .bnTop{position:absolute;left:28px;right:28px;top:20px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
@@ -79,7 +89,7 @@ main{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:24px 24p
 .spAside{flex:1 1 260px;max-width:100%;display:flex;flex-direction:column;gap:14px}
 .box2{padding:18px;border-radius:16px;background:var(--surface);border:1px solid var(--border)}.box2 h2{font-size:18px;margin-bottom:10px}
 @media(max-width:640px){.bn{height:300px}.bnTop,.bnBottom{left:14px;right:14px}.spMain{padding:16px 14px 50px}}
-.bgprev{height:110px;border-radius:12px;background:#8a5526 center/cover;border:1px solid var(--border)}
+.bgprev{height:110px;border-radius:12px;background:var(--cover) center/cover;border:1px solid var(--border)}
 .banner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-radius:var(--r1);border:1px solid #7a5a2a;background:#2e2414;margin-bottom:16px;font-size:14px}
 .banner.err{border-color:#8a3b2c;background:#2e1712}
 .hero{padding:30px;border-radius:22px;background:var(--hero);border:1px solid var(--border);margin-bottom:28px}
@@ -97,11 +107,11 @@ h2{margin:0;font-size:22px}
 .sbody{padding:12px 14px 14px}.sbody h3{margin:0 0 4px;font-size:18px}.sbody .cnt{margin-top:8px;font-size:12px;font-weight:700;color:var(--accent)}
 .addcard{flex:1 1 200px;min-height:170px;border:2px dashed var(--muted);border-radius:var(--r2);background:transparent;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer}
 .addcard:hover{border-color:var(--accent)}
-.panel{border:1px solid var(--border);border-radius:var(--r2);background:rgba(34,25,18,.75);padding:20px;margin-bottom:30px}
+.panel{border:1px solid var(--border);border-radius:var(--r2);background:var(--panel);padding:20px;margin-bottom:30px}
 .videos{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
 .vcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;display:flex;flex-direction:column}
 .vcard.off{opacity:.62}
-.thumb{position:relative;aspect-ratio:16/9;display:grid;place-items:center;border:0;padding:0;width:100%;cursor:pointer;background:#5a3a1f;overflow:hidden}
+.thumb{position:relative;aspect-ratio:16/9;display:grid;place-items:center;border:0;padding:0;width:100%;cursor:pointer;background:var(--thumb);overflow:hidden}
 .thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .play{position:relative;width:48px;height:48px;border-radius:50%;background:var(--accent);display:grid;place-items:center;box-shadow:0 4px 14px rgba(0,0,0,.4)}
 .offtag{position:relative;padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.7);color:#fff;font-size:12px;font-weight:700}
@@ -120,10 +130,10 @@ dialog::backdrop{background:rgba(5,3,2,.75)}
 .dlg{padding:22px;display:flex;flex-direction:column;gap:14px}
 .dlg h2{display:flex;align-items:center;gap:10px}
 label.f{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:600}
-input[type=text],input[type=password],input[type=search],select,textarea{width:100%;min-height:44px;padding:10px 12px;border:1px solid #5a4630;border-radius:10px;background:#140e09;color:var(--text)}
+input[type=text],input[type=password],input[type=search],select,textarea{width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--fieldb);border-radius:10px;background:var(--field);color:var(--text)}
 textarea{min-height:70px;resize:vertical}
 input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,.scard:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-input[type=file]{padding:10px;border:1px dashed #5a4630;border-radius:10px;background:#140e09;width:100%}
+input[type=file]{padding:10px;border:1px dashed var(--fieldb);border-radius:10px;background:var(--field);width:100%}
 .hint{font-size:13px;color:var(--muted)}
 .err{color:#ffab98;font-size:14px}
 .box{padding:12px 14px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);font-size:14px}
@@ -139,10 +149,10 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
 </style>
 </head>
 <body>
-<svg class="wm" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 12 C44 28 18 38 18 63 C18 83 33 94 50 94 C67 94 82 83 82 63 C82 38 56 28 50 12Z" fill="#e8a14b"/><path d="M50 16 C45 33 32 45 32 65 C32 82 41 92 50 94 M50 16 C55 33 68 45 68 65 C68 82 59 92 50 94" fill="none" stroke="#17110c" stroke-width="2.6"/><path d="M50 12 C49 6 46 3 41 2 M50 12 C52 6 56 3 61 4" fill="none" stroke="#e8a14b" stroke-width="3.2" stroke-linecap="round"/></svg>
+<span class="wm" id="wmSlot" aria-hidden="true"></span>
 
 <header>
- <div class="brand"><span id="logoSlot"></span>onion <span>SMP</span></div>
+ <div class="brand"><span id="logoSlot"></span>minecraft <span>SMP</span></div>
  <div class="hright">
   <span class="pill" id="netPill"><span class="dot"></span><span>Offline</span></span>
   <button type="button" class="pill" id="folderPill" style="cursor:pointer"></button>
@@ -210,7 +220,7 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
 <!-- ===== Dialogs ===== -->
 <dialog id="dlgSetup">
  <form class="dlg" id="setupForm" method="dialog">
-  <h2><span class="logo-s"></span>Vítej v onion SMP</h2>
+  <h2><span class="logo-s"></span>Vítej v minecraft SMP</h2>
   <div class="tabs" role="tablist" id="setupTabs">
    <button type="button" role="tab" data-mode="join" aria-selected="true">Připojit se</button>
    <button type="button" role="tab" data-mode="create" aria-selected="false">Založit skupinu</button>
@@ -218,10 +228,10 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
   <label class="f">Tvoje jméno<input type="text" id="sName" required maxlength="30" placeholder="např. Michal" autocomplete="nickname"></label>
   <div id="sJoin">
    <label class="f">Pozvánka (nepovinné)<input type="text" id="sLink" placeholder="https://…#join=…"></label>
-   <div class="hint" style="margin-top:6px">Bez pozvánky se připojíš ke skupině na tomhle webu. Stačí, aby měl onion SMP otevřené aspoň jeden hráč.</div>
+   <div class="hint" style="margin-top:6px">Bez pozvánky se připojíš ke skupině na tomhle webu. Stačí, aby měl minecraft SMP otevřené aspoň jeden hráč.</div>
   </div>
   <div id="sCreate" class="hidden" style="display:flex;flex-direction:column;gap:14px">
-   <label class="f">Název skupiny<input type="text" id="sGroup" maxlength="40" placeholder="onion SMP"></label>
+   <label class="f">Název skupiny<input type="text" id="sGroup" maxlength="40" placeholder="minecraft SMP"></label>
    <label class="f">Kód admina<input type="password" id="sCode" minlength="4" autocomplete="new-password"></label>
    <label class="f">Kód admina znovu<input type="password" id="sCode2" autocomplete="new-password"></label>
    <div class="hint">Skupinu zakládá jen první hráč. Když už na tomhle webu skupina je, použij „Připojit se“. Kód admina dej jen správcům, kteří budou schvalovat žádosti o vlastní SMP.</div>
@@ -327,6 +337,7 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
  <form class="dlg" id="setForm" method="dialog">
   <h2>Nastavení</h2>
   <label class="f">Tvoje jméno<input type="text" id="stName" maxlength="30"></label>
+  <div class="f">Barva aplikace<div class="themes" id="stThemes" role="group" aria-label="Barva aplikace"></div></div>
   <div class="box" id="stStore"></div>
   <label class="f">Pozvánka pro další hráče
    <div class="row" style="flex-wrap:nowrap"><input type="text" id="stLink" readonly><button type="button" class="btn" id="stCopy">Kopírovat</button></div>
@@ -350,6 +361,15 @@ const $ = s => document.querySelector(s);
 const params = new URLSearchParams(location.search);
 const FS_OK = 'showDirectoryPicker' in window && !params.has('nofs');
 const APP = 'onionsmp';
+const THEMES = { zlata: ['Zlatá', '#e8a14b'], smaragd: ['Smaragdová', '#5fc46a'], diamant: ['Diamantová', '#5ad1e6'], redstone: ['Rudá', '#ff6a55'], ametyst: ['Ametystová', '#b48cff'] };
+let theme = 'zlata';
+function setTheme(k) {
+  theme = THEMES[k] ? k : 'zlata';
+  if (theme === 'zlata') document.documentElement.removeAttribute('data-theme'); else document.documentElement.dataset.theme = theme;
+  try { localStorage.setItem('onionsmp-theme', theme); } catch { }
+  try { if (me) render(); } catch { }   // `me` does not exist yet during the first call
+}
+try { setTheme(localStorage.getItem('onionsmp-theme')); } catch { }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const rid = (n = 10) => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => 'abcdefghijkmnpqrstuvwxyz23456789'[b % 32]).join('');
 function el(tag, attrs = {}, ...kids) {
@@ -378,7 +398,12 @@ const ICONS = {
   edit: '<path d="M4 20 h4 L19 9 l-4 -4 L4 16 Z"/>'
 };
 const icon = (n, s = 18) => `<svg aria-hidden="true" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]}</svg>`;
-const onionSvg = (s, skin = '#e0954a') => `<svg role="img" aria-label="Logo onion SMP" width="${s}" height="${s}" viewBox="0 0 100 100"><path d="M50 12 C44 28 18 38 18 63 C18 83 33 94 50 94 C67 94 82 83 82 63 C82 38 56 28 50 12Z" fill="${skin}"/><path d="M50 16 C45 33 32 45 32 65 C32 82 41 92 50 94 M50 16 C55 33 68 45 68 65 C68 82 59 92 50 94" fill="none" stroke="#8a4f1f" stroke-width="2.6" stroke-linecap="round"/><path d="M50 20 L50 92" stroke="#8a4f1f" stroke-width="2" opacity=".7"/><path d="M50 12 C49 6 46 3 41 2 M50 12 C52 6 56 3 61 4" fill="none" stroke="#8fbf5a" stroke-width="3.2" stroke-linecap="round"/><path d="M45 93 L41 99 M50 94 L50 100 M55 93 L59 99" stroke="#8a4f1f" stroke-width="2" stroke-linecap="round"/></svg>`;
+// isometric pixel block in the colours of the current variant (mode: 'off' = grey, 'mono' = light watermark)
+function blockSvg(s, mode) {
+  const [a, b, c] = mode === 'off' ? ['#9a948c', '#77716a', '#5a554f'] : mode === 'mono' ? ['#fff2e0', '#e8dccb', '#cfc3b2'] : ['var(--b1)', 'var(--b2)', 'var(--b3)'];
+  const dots = [[6, 3], [10, 4], [8, 6], [3, 8], [5, 11], [3, 12], [11, 9], [13, 7], [10, 12]].map(([x, y]) => `<rect x="${x}" y="${y}" width="1" height="1" fill="#000" opacity=".18"/>`).join('');
+  return `<svg ${mode === 'mono' ? 'aria-hidden="true"' : 'role="img" aria-label="Logo minecraft SMP"'} width="${s}" height="${s}" viewBox="0 0 16 16" shape-rendering="crispEdges"><path d="M8 1 15 4.5 8 8 1 4.5Z" style="fill:${a}"/><path d="M1 4.5 8 8 8 15 1 11.5Z" style="fill:${b}"/><path d="M8 8 15 4.5 15 11.5 8 15Z" style="fill:${c}"/>${dots}<path d="M8 1 15 4.5 15 11.5 8 15 1 11.5 1 4.5Z M1 4.5 8 8 15 4.5 M8 8 8 15" fill="none" stroke="#000" stroke-opacity=".45" stroke-width=".5"/></svg>`;
+}
 function toast(msg, ms = 3200) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), ms); }
 const fmtDur = s => !s || !isFinite(s) ? '' : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 const fmtSize = b => b > 1e9 ? (b / 1e9).toFixed(2) + ' GB' : (b / 1e6).toFixed(1) + ' MB';
@@ -791,7 +816,7 @@ function sourcesFor(v) {
 }
 function failText(v, reasons) {
   const o = nameOf(v.owner);
-  if (reasons.includes('perm')) return `${o} má video ve složce, ale jeho aplikace k ní teď nemá přístup. ${o} musí v onion SMP nahoře kliknout na „Povolit přístup“. Pak to zkus znovu.`;
+  if (reasons.includes('perm')) return `${o} má video ve složce, ale jeho aplikace k ní teď nemá přístup. ${o} musí v minecraft SMP nahoře kliknout na „Povolit přístup“. Pak to zkus znovu.`;
   if (reasons.includes('missing')) return `Soubor videa u hráče ${o} chybí. Asi ho přesunul nebo smazal ze složky, musí ho nahrát znovu.`;
   if (reasons.includes('net')) return `Nepodařilo se spojit s hráčem ${o} kvůli stažení videa. Zkus to za chvíli znovu, případně ať ${o} obnoví stránku.`;
   return `Video teď nejde stáhnout. ${o} ani nikdo jiný, kdo ho má, není online.`;
@@ -847,8 +872,11 @@ async function handleMsg(d, msg) {
 function dlFail(msg) { dl = null; plStatus(msg, null); }
 
 /* ================= UI rendering ================= */
-const COVERS = ['#8a5526', '#6f4a2b', '#a8662b', '#5d3d22', '#7a5a2a', '#6a3f24'];
-const THUMBS = ['#5a3a1f', '#6e4824', '#4a3a2a', '#7a5428'];
+const COVERS_Z = ['#8a5526', '#6f4a2b', '#a8662b', '#5d3d22', '#7a5a2a', '#6a3f24'];
+const THUMBS_Z = ['#5a3a1f', '#6e4824', '#4a3a2a', '#7a5428'];
+const mix = p => `color-mix(in srgb, var(--accent) ${p}%, #000)`;
+const COVERS = new Proxy([], { get: (_, k) => k === 'length' ? 6 : theme === 'zlata' ? COVERS_Z[k] : mix([50, 40, 58, 34, 46, 38][k]) });
+const THUMBS = new Proxy([], { get: (_, k) => k === 'length' ? 4 : theme === 'zlata' ? THUMBS_Z[k] : mix([26, 32, 22, 36][k]) });
 const nameOf = uid => cat.users[uid]?.name || 'neznámý hráč';
 const isOn = uid => uid === me.uid ? netState === 'ok' : online.has(uid);
 const liveSmps = () => Object.values(cat.smps).filter(x => !x.deleted && canOwnSmp(x.owner) && activeUser(cat.users[x.owner]))
@@ -866,7 +894,7 @@ let activeSmp = null;
 
 function render() {
   if (!me) return;
-  $('#groupName').textContent = 'VŠECHNA SMP · ' + (cat.group?.name || 'onion SMP').toUpperCase();
+  $('#groupName').textContent = 'VŠECHNA SMP · ' + (cat.group?.name || 'minecraft SMP').toUpperCase();
   const nReq = isAdmin ? pendingRequests().length : 0;
   $('#adminBtn').innerHTML = icon(isAdmin ? 'unlock' : 'lock', 16) + (isAdmin ? 'Admin ✓' : 'Admin') + (nReq ? ` <span class="badge" style="background:var(--text);color:var(--bg)">${nReq}</span>` : '');
   if ($('#dlgAdmin').open) renderRequests();
@@ -895,10 +923,10 @@ function renderRail() {
     if (q && !shown.length && !x.name.toLowerCase().includes(q)) return;
     const head = el('div', { class: 'colhead' + (okImg(x.bg) ? ' img' : '') });
     if (okImg(x.bg)) head.style.backgroundImage = `url("${x.bg}")`;
-    else { head.style.backgroundColor = COVERS[i % COVERS.length]; head.insertAdjacentHTML('afterbegin', `<span class="wmk">${onionSvg(100, '#fff2e0')}</span>`); }
+    else { head.style.backgroundColor = COVERS[i % COVERS.length]; head.insertAdjacentHTML('afterbegin', `<span class="wmk">${blockSvg(100, 'mono')}</span>`); }
     head.append(el('span', { class: 'tag', text: mine ? 'MOJE SMP' : `SMP ${String(i + 1).padStart(2, '0')}` }),
       el('span', { class: 'state' }, el('span', { class: 'dot' + (on ? ' on' : '') }), on ? 'online' : 'offline'));
-    const title = el('div', { class: 'coltitle' }, el('h2', { html: onionSvg(24, on ? '#e0954a' : '#7a6a5a') }, el('span', { text: x.name })),
+    const title = el('div', { class: 'coltitle' }, el('h2', { html: blockSvg(24, on ? '' : 'off') }, el('span', { text: x.name })),
       el('div', { class: 'muted', style: 'font-size:13px;margin-top:4px', text: `Admin: ${nameOf(x.owner)}${x.desc ? ' · ' + x.desc : ''}` }));
     const mins = Math.round(vids.reduce((a, v) => a + (v.dur || 0), 0) / 60);
     const stats = el('div', { class: 'stats' }, ...[[vids.length, plural(vids.length, 'video', 'videa', 'videí')], [secsOf(x.id).length, plural(secsOf(x.id).length, 'sekce', 'sekce', 'sekcí')], [mins, 'minut']]
@@ -950,7 +978,7 @@ function renderChannel() {
   const bn = $('#spBanner'); bn.classList.toggle('img', okImg(x.bg));
   bn.style.backgroundImage = okImg(x.bg) ? `url("${x.bg}")` : 'none';
   bn.querySelector('.wmk')?.remove();
-  if (!okImg(x.bg)) bn.insertAdjacentHTML('afterbegin', `<span class="wmk">${onionSvg(320, '#fff2e0')}</span>`);
+  if (!okImg(x.bg)) bn.insertAdjacentHTML('afterbegin', `<span class="wmk">${blockSvg(320, 'mono')}</span>`);
   $('#spState').innerHTML = `<span class="dot${on ? ' on' : ''}"></span>${on ? 'online' : 'offline'}`;
   $('#spName').textContent = x.name;
   $('#spSub').textContent = `Admin: ${nameOf(x.owner)}${x.desc ? ' · ' + x.desc : ''}`;
@@ -988,7 +1016,7 @@ function renderChannel() {
   });
   // aside
   $('#spAbout').textContent = (x.desc ? x.desc + '\n\n' : '') + `Videa leží ve složce hráče ${nameOf(x.owner)}. Přehrát jdou, když je online on nebo někdo, kdo si je už stáhl.`;
-  $('#spAdmin').innerHTML = `<div style="display:flex;align-items:center;gap:10px">${onionSvg(36, on ? '#e0954a' : '#7a6a5a')}<div><div style="font-weight:700"></div><div style="font-size:12px;color:${on ? 'var(--ok)' : 'var(--muted)'}">${on ? '● online · videa jdou přehrát' : '○ offline · přehrát jdou jen stažená videa'}</div></div></div>`;
+  $('#spAdmin').innerHTML = `<div style="display:flex;align-items:center;gap:10px">${blockSvg(36, on ? '' : 'off')}<div><div style="font-weight:700"></div><div style="font-size:12px;color:${on ? 'var(--ok)' : 'var(--muted)'}">${on ? '● online · videa jdou přehrát' : '○ offline · přehrát jdou jen stažená videa'}</div></div></div>`;
   $('#spAdmin div div div').textContent = nameOf(x.owner) + (mine ? ' (ty)' : '');
   const rec = $('#spRecent'); rec.textContent = '';
   all.slice(0, 3).forEach((v, k) => rec.append(miniBtn(v, k)));
@@ -1041,9 +1069,9 @@ function renderBanners() {
       if (d.st === 'none') return `${k}: nikdo`;
       const pc = d.c?.peerConnection; return `${k}: hráč nalezen, spojení ${pc ? pc.iceConnectionState : 'se navazuje'}`;
     }).join(' · ');
-    add(`Připojuji se ke skupině… Aspoň jeden hráč ze skupiny musí mít onion SMP právě otevřené. Až ho někdo otevře, připojíš se sám. [${netState === 'ok' ? 'síť OK' : 'síť: ' + netState} | vrátnice ${st}]`);
+    add(`Připojuji se ke skupině… Aspoň jeden hráč ze skupiny musí mít minecraft SMP právě otevřené. Až ho někdo otevře, připojíš se sám. [${netState === 'ok' ? 'síť OK' : 'síť: ' + netState} | vrátnice ${st}]`);
   }
-  if (netState === 'dup') add('onion SMP už máš otevřený v jiné záložce nebo okně. Zavři ho a tuhle stránku obnov.', 'Obnovit', () => location.reload(), true);
+  if (netState === 'dup') add('minecraft SMP už máš otevřený v jiné záložce nebo okně. Zavři ho a tuhle stránku obnov.', 'Obnovit', () => location.reload(), true);
   if (netState === 'nolib') add('Nepodařilo se načíst síťovou knihovnu. Zkontroluj připojení k internetu a stránku obnov.', 'Obnovit', () => location.reload(), true);
   if (store.mode === 'idb' && !FS_OK && !sessionStorage.getItem('hideFsInfo'))
     add('Tento prohlížeč neumí pracovat se složkou v počítači, takže videa se ukládají přímo v prohlížeči. Pro ukládání do složky použij Chrome nebo Edge.', 'Rozumím', () => { sessionStorage.setItem('hideFsInfo', '1'); renderBanners(); });
@@ -1110,7 +1138,7 @@ function setSetupMode(m) {
 document.querySelectorAll('#setupTabs button').forEach(b => b.onclick = () => setSetupMode(b.dataset.mode));
 $('#dlgSetup').addEventListener('cancel', e => e.preventDefault());
 function showSetup() {
-  $('.logo-s').innerHTML = onionSvg(34);
+  $('.logo-s').innerHTML = blockSvg(34);
   const inv = parseInvite(location.hash);
   if (inv) $('#sLink').value = location.href;
   setSetupMode('join'); renderSetupStore();
@@ -1138,7 +1166,7 @@ $('#setupForm').onsubmit = async e => {
       const pub = await crypto.subtle.exportKey('jwk', kp.publicKey), priv = await crypto.subtle.exportKey('jwk', kp.privateKey);
       await setSignKey(priv); verifyKey = await importPub(pub); isAdmin = true;
       await idb.set('kv', 'adminKey', priv); await idb.set('kv', 'me', me);
-      const g = { id: me.gid, name: $('#sGroup').value.trim() || 'onion SMP', pub, keyEnc: await wrapPriv(priv, code), ts: Date.now(), by: me.uid };
+      const g = { id: me.gid, name: $('#sGroup').value.trim() || 'minecraft SMP', pub, keyEnc: await wrapPriv(priv, code), ts: Date.now(), by: me.uid };
       cat.group = await sign(g);
       await loadUserKey(); await commitMe();
       var firstSmp = await saveSmp({ name: `${name} SMP`, desc: '', bg: null }, null);
@@ -1356,7 +1384,15 @@ const inviteLink = () => {
   const others = activeIds().filter(u => u !== me.uid).sort((a, b) => online.has(b) - online.has(a)).slice(0, 9);
   return `${location.origin}${location.pathname}${location.search}#join=${gid()}.${[me.uid, ...others].join('.')}`;
 };
+function renderThemes() {
+  const h = $('#stThemes'); h.textContent = '';
+  for (const [k, [n, c]] of Object.entries(THEMES)) {
+    const b = el('button', { type: 'button', 'aria-pressed': String(k === theme), onclick: () => { setTheme(k); renderThemes(); } }, el('i', { style: `background:${c}` }), n);
+    h.append(b);
+  }
+}
 function openSettings() {
+  renderThemes();
   $('#stName').value = me.name; $('#stLink').value = inviteLink();
   const b = $('#stStore'); b.textContent = '';
   b.append(el('div', { class: 'hint', style: 'margin-bottom:10px', text: `Vrátnice pro nové hráče: ${lobbyPeer ? 'tento počítač ji drží (č. ' + lobbyPeer.id.split('-').pop() + ')' : 'tento počítač ji nedrží'} · ID: ${me.uid}` }));
@@ -1413,7 +1449,8 @@ $('#heroInvite').innerHTML = icon('link', 16) + 'Pozvat hráče'; $('#heroInvite
 $('#railL').onclick = () => $('#rail').scrollBy({ left: -320, behavior: 'smooth' });
 $('#railR').onclick = () => $('#rail').scrollBy({ left: 320, behavior: 'smooth' });
 $('#search').oninput = () => { renderRail(); renderChannel(); };
-$('#logoSlot').innerHTML = onionSvg(40);
+$('#logoSlot').innerHTML = blockSvg(40);
+$('#wmSlot').innerHTML = blockSvg(520, '');
 $('#logoSlot').style.display = 'inline-flex';
 
 function start() { routeFromHash(); render(); startNet(); setInterval(() => { if (!cat.group) renderBanners(); }, 2000); }

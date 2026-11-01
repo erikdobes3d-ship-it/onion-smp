@@ -1,4 +1,4 @@
-# onion SMP
+# minecraft SMP
 
 Sdílená video knihovna bez vlastního serveru. Každý hráč má videa ve své složce a ostatní si je přehrávají přímo z jeho počítače (WebRTC přes PeerJS).
 
@@ -18,6 +18,7 @@ Aplikace musí běžet přes https (GitHub Pages to splňuje). Z disku přes `fi
 - **Práva admina:** tlačítko Admin → zadat kód. Admin si může založit **vlastní SMP** (sloupec „Založit moje SMP“), dát mu obrázek na pozadí a nahrávat do něj videa. Hráči bez kódu se jen dívají.
 - **Až 3 vlastní SMP:** každý hráč se schváleným SMP si jich může založit nejvýš 3 a kdykoli je smazat (Otevřít → Upravit SMP → Smazat SMP).
 - **Super admin erik3d:** admin se jménem `erik3d` se při prvním přihlášení jako admin zapíše do skupiny jako super admin. Může smazat cizí SMP, sekce i videa. Tuhle roli pak už nikdo jiný převzít nemůže.
+- **Barva aplikace:** v Nastavení si každý vybere jednu z 5 barev (Zlatá, Smaragdová, Diamantová, Rudá, Ametystová). Volba platí jen pro jeho prohlížeč.
 - **Každé SMP je jeden sloupec** na hlavní stránce. Sloupce se posouvají do strany a kliknutím na „Otevřít“ se SMP otevře na celou stránku.
 
 ## Jak to funguje
