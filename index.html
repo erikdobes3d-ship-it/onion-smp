@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>minecraft SMP</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1 15 4.5 8 8 1 4.5Z' fill='%23f2c94c'/%3E%3Cpath d='M1 4.5 8 8 8 15 1 11.5Z' fill='%23d9a520'/%3E%3Cpath d='M8 8 15 4.5 15 11.5 8 15Z' fill='%23a87a12'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1 15 4.5 8 8 1 4.5Z' fill='%236fbf4a'/%3E%3Cpath d='M1 4.5 8 8 8 15 1 11.5Z' fill='%238a5a33'/%3E%3Cpath d='M8 8 15 4.5 15 11.5 8 15Z' fill='%236e4626'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap">
 <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
@@ -363,13 +363,14 @@ const FS_OK = 'showDirectoryPicker' in window && !params.has('nofs');
 const APP = 'onionsmp';
 const THEMES = { zlata: ['Zlatá', '#e8a14b'], smaragd: ['Smaragdová', '#5fc46a'], diamant: ['Diamantová', '#5ad1e6'], redstone: ['Rudá', '#ff6a55'], ametyst: ['Ametystová', '#b48cff'] };
 let theme = 'zlata';
-function setTheme(k) {
-  theme = THEMES[k] ? k : 'zlata';
+const DEFAULT_THEME = 'smaragd';
+function setTheme(k, keep = true) {
+  theme = THEMES[k] ? k : DEFAULT_THEME;
   if (theme === 'zlata') document.documentElement.removeAttribute('data-theme'); else document.documentElement.dataset.theme = theme;
-  try { localStorage.setItem('onionsmp-theme', theme); } catch { }
+  if (keep) try { localStorage.setItem('mcsmp-theme', theme); } catch { }
   try { if (me) render(); } catch { }   // `me` does not exist yet during the first call
 }
-try { setTheme(localStorage.getItem('onionsmp-theme')); } catch { }
+try { setTheme(localStorage.getItem('mcsmp-theme'), false); } catch { setTheme(DEFAULT_THEME, false); }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const rid = (n = 10) => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => 'abcdefghijkmnpqrstuvwxyz23456789'[b % 32]).join('');
 function el(tag, attrs = {}, ...kids) {
