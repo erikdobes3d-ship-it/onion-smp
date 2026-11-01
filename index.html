@@ -177,6 +177,8 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
     <button type="button" class="btn sec ownerOnly" id="chNewSec">Nová sekce</button>
     <button type="button" class="btn sec ownerOnly" id="chEdit">Upravit sekci</button>
     <button type="button" class="btn sec ownerOnly" id="chSmp">Upravit SMP</button>
+    <button type="button" class="btn danger superOnly" id="chSaSec">Smazat sekci</button>
+    <button type="button" class="btn danger superOnly" id="chSaSmp">Smazat SMP</button>
    </div>
   </div>
   <div class="bnBottom">
@@ -485,12 +487,17 @@ async function loadUserKey() {
   userKey = await crypto.subtle.importKey('jwk', { ...priv, key_ops: ['sign'] }, EC, false, ['sign']); userPub = pub;
 }
 const pubCache = new Map();
-async function userVerifyKey(uid) {
-  const pub = cat.users[uid]?.pub; if (!pub) return null;
+async function pubKey(pub) {
+  if (!pub) return null;
   const k = canon(pub);
   if (!pubCache.has(k)) pubCache.set(k, await importPub(pub).catch(() => null));
   return pubCache.get(k);
 }
+const userVerifyKey = uid => pubKey(cat.users[uid]?.pub);
+// super admin: the player named SUPER, pinned once (with his key) in the group record signed by the group key
+const SUPER = 'erik3d', MAX_SMP = 3;
+const iAmSuper = () => !!(cat.group?.sa && cat.group.sa === me?.uid && canon(cat.group.saPub) === canon(userPub));
+const bySuper = async e => !!(e.deleted && cat.group?.sa && e.by === cat.group.sa && await verify(e, await pubKey(cat.group.saPub)));
 const admText = u => `adm:${u.id}:${canon(u.pub)}`;
 async function verify(o, key = verifyKey) {
   if (!o || typeof o.sig !== 'string' || !key) return false;
@@ -514,7 +521,7 @@ async function mergeCat(inc) {
       if (!k || !(await verify(inc.group, k))) return false;
       cat.group = inc.group; verifyKey = k; changed = true;
       if (!me.gid) { me.gid = inc.group.id; await idb.set('kv', 'me', me); }   // joined through the lobby
-    } else if (canon(inc.group.pub) === canon(cat.group.pub) && newer(inc.group, cat.group) && await verify(inc.group)) {
+    } else if (canon(inc.group.pub) === canon(cat.group.pub) && newer(inc.group, cat.group) && !(cat.group.sa && inc.group.sa !== cat.group.sa) && await verify(inc.group)) {
       cat.group = inc.group; changed = true;
     }
   }
@@ -546,22 +553,28 @@ async function mergeCat(inc) {
     if (!e || e.id !== id || !newer(e, cat.grants[id])) continue;
     if (await verify(e)) { cat.grants[id] = e; changed = true; }
   }
-  // an SMP belongs to one player (SMP id = his player id); everything in it is signed with his own key
+  // a player can own up to MAX_SMP SMPs; everything in them is signed with his own key.
+  // The super admin may only delete (deleted: true, signed with his key pinned in the group record).
   for (const [id, e] of Object.entries(inc.smps || {})) {
-    if (!e || e.id !== id || e.owner !== id || e.by !== id || typeof e.name !== 'string' || !newer(e, cat.smps[id])) continue;
-    if (!canOwnSmp(id)) continue;
+    if (!e || e.id !== id || !e.owner || typeof e.name !== 'string' || !newer(e, cat.smps[id])) continue;
+    if (cat.smps[id] && cat.smps[id].owner !== e.owner) continue;
     if (e.bg != null && !(typeof e.bg === 'string' && e.bg.startsWith('data:image/jpeg;base64,') && e.bg.length < 400000)) continue;
-    if (await verify(e, await userVerifyKey(id))) { cat.smps[id] = e; changed = true; }
+    if (e.by === e.owner) {
+      if (!e.deleted && !canOwnSmp(e.owner)) continue;
+      if (!e.deleted && (!cat.smps[id] || cat.smps[id].deleted) && smpsOf(e.owner).length >= MAX_SMP) continue;
+      if (!(await verify(e, await userVerifyKey(e.owner)))) continue;
+    } else if (!(await bySuper(e))) continue;
+    cat.smps[id] = e; changed = true;
   }
   for (const [id, e] of Object.entries(inc.sections || {})) {
-    if (!e || e.id !== id || !e.smp || e.by !== e.smp || !newer(e, cat.sections[id])) continue;
-    if (cat.sections[id] && cat.sections[id].smp !== e.smp) continue;
-    if (await verify(e, await userVerifyKey(e.smp))) { cat.sections[id] = e; changed = true; }
+    if (!e || e.id !== id || !e.smp || !newer(e, cat.sections[id])) continue;
+    if (cat.sections[id] && (cat.sections[id].smp !== e.smp || secOwner(cat.sections[id]) !== secOwner(e))) continue;
+    if (e.by === secOwner(e) ? await verify(e, await userVerifyKey(e.by)) : await bySuper(e)) { cat.sections[id] = e; changed = true; }
   }
   for (const [id, e] of Object.entries(inc.videos || {})) {
-    if (!e || e.id !== id || !e.smp || e.smp !== e.owner || e.by !== e.owner || !newer(e, cat.videos[id])) continue;
+    if (!e || e.id !== id || !e.smp || !e.owner || !newer(e, cat.videos[id])) continue;
     if (cat.videos[id] && cat.videos[id].owner !== e.owner) continue;   // nobody can steal a video
-    if (await verify(e, await userVerifyKey(e.owner))) { cat.videos[id] = e; changed = true; }
+    if (e.by === e.owner ? await verify(e, await userVerifyKey(e.owner)) : await bySuper(e)) { cat.videos[id] = e; changed = true; }
   }
   for (const [vid, h] of Object.entries(inc.holders || {})) {
     if (!h || typeof h !== 'object') continue;
@@ -571,6 +584,8 @@ async function mergeCat(inc) {
   return changed;
 }
 const userIsAdmin = u => !!(u && (u.adm || (u.admin && u.sig && !u.pub)));
+const smpsOf = uid => Object.values(cat.smps).filter(x => x.owner === uid && !x.deleted);
+const secOwner = s => s.owner || s.smp;   // older sections: SMP id = owner id
 // a player is hidden when he deleted his profile, or an admin removed him (and he has not been active since)
 const activeUser = u => !!u && !u.gone && !(cat.removed?.[u.id] && cat.removed[u.id].ts > u.ts);
 const activeIds = () => Object.values(cat.users).filter(activeUser).map(u => u.id);
@@ -602,13 +617,22 @@ async function commitMe() {
   const u = { id: me.uid, name: me.name, pub: userPub };
   if (isAdmin) u.adm = await signStr(admText(u), signKey);
   await commit('users', u);
+  await claimSuper();
+}
+// the first admin named SUPER pins himself as super admin; later changes of this are refused by everyone
+async function claimSuper() {
+  if (isAdmin && cat.group && !cat.group.sa && me.name.trim().toLowerCase() === SUPER) await commit('group', { ...cat.group, sa: me.uid, saPub: userPub });
 }
 const canEdit = v => v.owner === me.uid;
 const commitVideo = v => commit('videos', v);
 const DEFAULT_SECS = [['Epizody', 'Hlavní díly'], ['Nejlepší momenty', 'Souboje, vtipy a akce'], ['Novinky', 'Upoutávky a oznámení']];
-async function saveSmp(data, isNew) {
-  await commit('smps', { id: me.uid, owner: me.uid, ...data });
-  if (isNew) { let o = 0; for (const [n, d] of DEFAULT_SECS) await commit('sections', { id: rid(), smp: me.uid, name: n, desc: d, order: o++ }); }
+async function saveSmp(data, id) {
+  const isNew = !id;
+  if (isNew && smpsOf(me.uid).length >= MAX_SMP) throw new Error(`Můžeš mít nejvýš ${MAX_SMP} vlastní SMP. Nejdřív nějaké smaž.`);
+  id = id || rid();
+  await commit('smps', { ...(cat.smps[id] || {}), id, owner: me.uid, ...data });
+  if (isNew) { let o = 0; for (const [n, d] of DEFAULT_SECS) await commit('sections', { id: rid(), smp: id, owner: me.uid, name: n, desc: d, order: o++ }); }
+  return id;
 }
 
 /* ================= Network (PeerJS / WebRTC) ================= */
@@ -829,9 +853,9 @@ const nameOf = uid => cat.users[uid]?.name || 'neznámý hráč';
 const isOn = uid => uid === me.uid ? netState === 'ok' : online.has(uid);
 const liveSmps = () => Object.values(cat.smps).filter(x => !x.deleted && canOwnSmp(x.owner) && activeUser(cat.users[x.owner]))
   .sort((a, b) => (b.owner === me.uid) - (a.owner === me.uid) || isOn(b.owner) - isOn(a.owner) || a.name.localeCompare(b.name, 'cs'));
-const secsOf = smp => Object.values(cat.sections).filter(x => x.smp === smp && !x.deleted).sort((a, b) => (a.order - b.order) || a.name.localeCompare(b.name, 'cs'));
-const vidsOf = smp => Object.values(cat.videos).filter(v => v.smp === smp && !v.deleted).sort((a, b) => b.created - a.created);
-const liveVideos = () => Object.values(cat.videos).filter(v => !v.deleted && cat.smps[v.smp] && !cat.smps[v.smp].deleted);
+const secsOf = smp => Object.values(cat.sections).filter(x => x.smp === smp && !x.deleted && secOwner(x) === cat.smps[smp]?.owner).sort((a, b) => (a.order - b.order) || a.name.localeCompare(b.name, 'cs'));
+const vidsOf = smp => Object.values(cat.videos).filter(v => v.smp === smp && !v.deleted && v.owner === cat.smps[smp]?.owner).sort((a, b) => b.created - a.created);
+const liveVideos = () => Object.values(cat.videos).filter(v => !v.deleted && cat.smps[v.smp] && !cat.smps[v.smp].deleted && cat.smps[v.smp].owner === v.owner);
 const secName = v => cat.sections[v.section] && !cat.sections[v.section].deleted ? cat.sections[v.section].name : 'Nezařazené';
 const okImg = (x, kind) => typeof x === 'string' && x.startsWith(`data:image/jpeg;base64,`);
 function available(v) { return v.owner === me.uid || cat.holders[v.id]?.[me.uid] || sourcesFor(v).length > 0; }
@@ -884,13 +908,15 @@ function renderRail() {
     if (!shown.length) feed.append(el('div', { class: 'muted', style: 'padding:10px 8px;font-size:13px', text: q ? 'Nic nenalezeno.' : 'Zatím žádná videa.' }));
     const foot = el('div', { class: 'colfoot' },
       el('button', { type: 'button', class: 'btn sec', text: `Otevřít (${vids.length})`, onclick: () => openSmp(x.id) }),
-      mine ? el('button', { type: 'button', class: 'btn', html: icon('upload', 16) + 'Nahrát', onclick: () => openUpload(null) }) : null);
+      mine ? el('button', { type: 'button', class: 'btn', html: icon('upload', 16) + 'Nahrát', onclick: () => openUpload(null, x.id) }) : null);
     host.append(el('section', { class: 'col' + (mine ? ' mine' : ''), 'aria-label': x.name }, head, title, stats, el('div', { class: 'feedlbl', text: 'NEJNOVĚJŠÍ' }), feed, foot));
   });
   if (!cat.group) host.append(el('div', { class: 'empty', text: 'Čekám na připojení ke skupině…' }));
   else if (canOwnSmp(me.uid)) {
-    if (!cat.smps[me.uid] || cat.smps[me.uid].deleted)
-      host.append(el('button', { type: 'button', class: 'newcol', onclick: () => openSmpDlg(true), html: icon('plus', 30) + '<span>Založit moje SMP</span><span class="hint" style="font-weight:400">Tvoje SMP uvidí všichni hráči.</span>' }));
+    const n = smpsOf(me.uid).length;
+    host.append(n < MAX_SMP
+      ? el('button', { type: 'button', class: 'newcol', onclick: () => openSmpDlg(null), html: icon('plus', 30) + `<span>${n ? 'Založit další SMP' : 'Založit moje SMP'}</span><span class="hint" style="font-weight:400">Máš ${n} z ${MAX_SMP}. Tvoje SMP uvidí všichni hráči.</span>` })
+      : el('div', { class: 'newcol', style: 'cursor:default', html: icon('lock', 26) + `<span>Máš ${MAX_SMP} z ${MAX_SMP} SMP</span><span class="hint" style="font-weight:400">Na další SMP nejdřív nějaké smaž (Otevřít → Upravit SMP → Smazat).</span>` }));
   } else if (reqPending(me.uid))
     host.append(el('div', { class: 'newcol', style: 'cursor:default', html: icon('lock', 26) + '<span>Žádost odeslána</span><span class="hint" style="font-weight:400">Čeká na schválení adminem. Jakmile ji schválí, můžeš si tu založit svoje SMP.</span>' }));
   else {
@@ -913,10 +939,13 @@ function renderChannel() {
   $('#smpPage').classList.toggle('hidden', !show);
   if (!show) return;
   const mine = x.owner === me.uid, on = isOn(x.owner);
+  const sup = !mine && iAmSuper();   // super admin deletes anything in other players' SMPs
   document.querySelectorAll('.ownerOnly').forEach(e => e.classList.toggle('hidden', !mine));
+  document.querySelectorAll('.superOnly').forEach(e => e.classList.toggle('hidden', !sup));
   const secs = secsOf(x.id), all = vidsOf(x.id), ids = new Set(secs.map(s => s.id));
   if (activeSec !== 'all' && activeSec !== '_none' && !ids.has(activeSec)) activeSec = 'all';
   $('#chEdit').classList.toggle('hidden', !mine || activeSec === 'all' || activeSec === '_none');
+  $('#chSaSec').classList.toggle('hidden', !sup || activeSec === 'all' || activeSec === '_none');
   // banner
   const bn = $('#spBanner'); bn.classList.toggle('img', okImg(x.bg));
   bn.style.backgroundImage = okImg(x.bg) ? `url("${x.bg}")` : 'none';
@@ -949,7 +978,8 @@ function renderChannel() {
     if (okImg(v.thumb)) th.append(el('img', { src: v.thumb, alt: '' }));
     th.append(av ? el('span', { class: 'play', html: icon('play', 20), style: 'color:var(--onaccent)' }) : el('span', { class: 'offtag', text: `${nameOf(v.owner)} je offline` }));
     if (v.dur) th.append(el('span', { class: 'dur', text: fmtDur(v.dur) }));
-    const actions = canEdit(v) ? el('div', { class: 'vactions' }, el('button', { type: 'button', class: 'btn sec small', onclick: () => openEdit(v), html: icon('edit', 14) + 'Upravit' })) : null;
+    const actions = canEdit(v) ? el('div', { class: 'vactions' }, el('button', { type: 'button', class: 'btn sec small', onclick: () => openEdit(v), html: icon('edit', 14) + 'Upravit' }))
+      : sup ? el('div', { class: 'vactions' }, el('button', { type: 'button', class: 'btn danger small', text: 'Smazat', onclick: () => superDelete('videos', v, `video „${v.title}“`) })) : null;
     host.append(el('article', { class: 'vcard' + (av ? '' : ' off') }, th,
       el('div', { class: 'vinfo' }, el('h4', { text: v.title }),
         v.desc ? el('div', { class: 'muted', style: 'font-size:13px', text: v.desc.length > 90 ? v.desc.slice(0, 90) + '…' : v.desc }) : null,
@@ -970,16 +1000,22 @@ function renderPlayers() {
   for (const u of users) {
     const on = u.id === me.uid ? netState === 'ok' : online.has(u.id);
     const n = liveVideos().filter(v => v.owner === u.id).length;
-    const sm = cat.smps[u.id] && !cat.smps[u.id].deleted ? cat.smps[u.id].name : null;
+    const sm = smpsOf(u.id).map(x => x.name).join(', ') || null;
     host.append(el('div', { class: 'player' },
       el('span', { class: 'dot' + (on ? ' on' : '') }),
-      el('div', {}, el('div', { style: 'font-weight:700' }, u.name + (u.id === me.uid ? ' (ty)' : ''), ' ', userIsAdmin(u) ? el('span', { class: 'badge', text: 'admin' }) : null),
+      el('div', {}, el('div', { style: 'font-weight:700' }, u.name + (u.id === me.uid ? ' (ty)' : ''), ' ', cat.group?.sa === u.id ? el('span', { class: 'badge', text: 'super admin' }) : userIsAdmin(u) ? el('span', { class: 'badge', text: 'admin' }) : null),
         el('div', { class: 'muted', style: 'font-size:12px', text: `${on ? 'online' : 'offline'} · ${sm ? sm + ' · ' : ''}${n} videí` })),
       isAdmin && u.id !== me.uid ? el('button', { type: 'button', class: 'btn ghost small', 'aria-label': `Odebrat hráče ${u.name}`, title: 'Odebrat hráče', text: '×', style: 'min-height:32px;padding:0 10px', onclick: () => removePlayer(u) }) : null));
   }
 }
+async function superDelete(kind, e, what) {
+  if (!confirm(`Smazat ${what}? Jako super admin to smažeš u všech hráčů. Soubory ve složce autora zůstanou.`)) return;
+  await commit(kind, { ...e, deleted: true });
+  if (kind === 'smps') location.hash = ''; else if (kind === 'sections') activeSec = 'all';
+  render(); toast('Smazáno.');
+}
 async function removePlayer(u) {
-  const sm = cat.smps[u.id] && !cat.smps[u.id].deleted;
+  const sm = smpsOf(u.id).length > 0;
   if (!confirm(`Odebrat hráče ${u.name} ze seznamu?${sm ? ' Zmizí i jeho SMP.' : ''} Když se znovu připojí, objeví se zase.`)) return;
   await commit('removed', { id: u.id });
   if (sm) await commit('grants', { id: u.id, ok: false });
@@ -1105,13 +1141,13 @@ $('#setupForm').onsubmit = async e => {
       const g = { id: me.gid, name: $('#sGroup').value.trim() || 'onion SMP', pub, keyEnc: await wrapPriv(priv, code), ts: Date.now(), by: me.uid };
       cat.group = await sign(g);
       await loadUserKey(); await commitMe();
-      await saveSmp({ name: `${name} SMP`, desc: '', bg: null }, true);
+      var firstSmp = await saveSmp({ name: `${name} SMP`, desc: '', bg: null }, null);
     }
     save();
     history.replaceState(null, '', location.pathname + location.search);
     $('#dlgSetup').close();
     start();
-    if (setupMode === 'create') setTimeout(() => openSmpDlg(false), 400);
+    if (setupMode === 'create') setTimeout(() => openSmpDlg(firstSmp), 400);
   } catch (ex) { err.textContent = ex.message; }
   finally { $('#sGo').disabled = false; }
 };
@@ -1188,31 +1224,33 @@ $('#secForm').onsubmit = async e => {
   e.preventDefault();
   const name = $('#secName').value.trim(); if (!name) return;
   try {
-    const s = editingSec ? { ...editingSec } : { id: rid(), smp: me.uid, order: Math.max(-1, ...secsOf(me.uid).map(x => x.order)) + 1 };
+    const s = editingSec ? { ...editingSec } : { id: rid(), smp: activeSmp, owner: me.uid, order: Math.max(-1, ...secsOf(activeSmp).map(x => x.order)) + 1 };
     s.name = name; s.desc = $('#secDesc').value.trim();
     await commit('sections', s);
     activeSec = s.id; $('#dlgSection').close(); render();
   } catch (ex) { $('#secErr').textContent = ex.message; }
 };
 $('#secDel').onclick = async () => {
-  const n = vidsOf(me.uid).filter(v => v.section === editingSec.id).length;
+  const n = vidsOf(editingSec.smp).filter(v => v.section === editingSec.id).length;
   if (!confirm(n ? `Smazat sekci „${editingSec.name}“? ${n} videí se přesune do „Nezařazené“.` : `Smazat sekci „${editingSec.name}“?`)) return;
   await commit('sections', { ...editingSec, deleted: true });
   activeSec = 'all'; $('#dlgSection').close(); render();
 };
 
 /* ================= Upload ================= */
-function fillSecSelect(sel, value) {
+function fillSecSelect(sel, value, smp) {
   sel.textContent = '';
-  const secs = secsOf(me.uid);
+  const secs = secsOf(smp);
   for (const s of secs) sel.append(el('option', { value: s.id, text: s.name }));
   sel.append(el('option', { value: '_none', text: 'Nezařazené' }));
   sel.value = value && secs.find(s => s.id === value) ? value : (secs[0]?.id || '_none');
 }
-function openUpload(secId) {
-  if (!cat.smps[me.uid] || cat.smps[me.uid].deleted) return toast('Nejdřív si založ vlastní SMP.');
+let uploadSmp = null;
+function openUpload(secId, smp = activeSmp) {
+  if (!cat.smps[smp] || cat.smps[smp].deleted || cat.smps[smp].owner !== me.uid) return toast('Nejdřív si založ vlastní SMP.');
+  uploadSmp = smp;
   $('#upForm').reset(); $('#upErr').textContent = ''; $('#upBar').classList.add('hidden');
-  fillSecSelect($('#upSec'), secId || (activeSmp === me.uid ? activeSec : null));
+  fillSecSelect($('#upSec'), secId || (activeSmp === smp ? activeSec : null), smp);
   $('#upWhere').textContent = store.mode === 'folder' ? `Video se zkopíruje do tvé složky „${store.dir.name}“ (podsložka videos).` : 'Video se uloží v tomto prohlížeči.';
   $('#dlgUpload').showModal();
 }
@@ -1246,7 +1284,7 @@ $('#upForm').onsubmit = async e => {
     const id = rid(); const ext = (/\.[a-z0-9]{2,5}$/i.exec(f.name)?.[0] || '.mp4').toLowerCase();
     await store.put('videos', id, f, ext);
     $('#upBar div').style.width = '90%';
-    await commitVideo({ id, owner: me.uid, smp: me.uid, title: $('#upTitle').value.trim(), desc: $('#upDesc').value.trim(), section: $('#upSec').value, size: f.size, type: f.type || 'video/mp4', ext, dur: info.dur || 0, thumb: info.thumb || null, created: Date.now() });
+    await commitVideo({ id, owner: me.uid, smp: uploadSmp, title: $('#upTitle').value.trim(), desc: $('#upDesc').value.trim(), section: $('#upSec').value, size: f.size, type: f.type || 'video/mp4', ext, dur: info.dur || 0, thumb: info.thumb || null, created: Date.now() });
     $('#dlgUpload').close(); render(); toast('Video přidáno. Ostatní ho uvidí, jakmile budou online.');
   } catch (ex) { err.textContent = ex.name === 'QuotaExceededError' ? 'Video je na úložiště prohlížeče příliš velké.' : ex.message; }
   finally { $('#upGo').disabled = false; }
@@ -1256,7 +1294,7 @@ $('#upForm').onsubmit = async e => {
 let editingVid = null;
 function openEdit(v) {
   editingVid = v;
-  $('#edTitle').value = v.title; $('#edDesc').value = v.desc || ''; fillSecSelect($('#edSec'), v.section);
+  $('#edTitle').value = v.title; $('#edDesc').value = v.desc || ''; fillSecSelect($('#edSec'), v.section, v.smp);
   $('#dlgEdit').showModal();
 }
 $('#edForm').onsubmit = async e => {
@@ -1271,12 +1309,13 @@ $('#edDel').onclick = async () => {
 };
 
 /* ================= My SMP ================= */
-let smpBg = null, smpNew = false;
+let smpBg = null, smpNew = false, smpEditId = null;
 function showBg() { const pv = $('#smpPrev'); pv.style.backgroundImage = smpBg ? `url("${smpBg}")` : 'none'; }
-function openSmpDlg(isNew) {
-  const x = cat.smps[me.uid]; smpNew = isNew || !x || x.deleted;
-  $('#smpTitle').textContent = smpNew ? 'Založit moje SMP' : 'Upravit moje SMP';
-  $('#smpName').value = !smpNew ? x.name : `${me.name} SMP`; $('#smpDesc').value = !smpNew ? (x.desc || '') : '';
+function openSmpDlg(id) {
+  const x = id && cat.smps[id]; smpNew = !x || x.deleted || x.owner !== me.uid; smpEditId = smpNew ? null : id;
+  if (smpNew && smpsOf(me.uid).length >= MAX_SMP) return toast(`Můžeš mít nejvýš ${MAX_SMP} vlastní SMP.`);
+  $('#smpTitle').textContent = smpNew ? 'Založit nové SMP' : 'Upravit SMP';
+  $('#smpName').value = !smpNew ? x.name : `${me.name} SMP${smpsOf(me.uid).length ? ' ' + (smpsOf(me.uid).length + 1) : ''}`; $('#smpDesc').value = !smpNew ? (x.desc || '') : '';
   smpBg = !smpNew ? (x.bg || null) : null; showBg(); $('#smpErr').textContent = '';
   $('#smpDel').classList.toggle('hidden', smpNew);
   $('#dlgSmp').showModal();
@@ -1300,14 +1339,14 @@ $('#smpForm').onsubmit = async e => {
   const name = $('#smpName').value.trim(); if (!name) return;
   $('#smpGo').disabled = true;
   try {
-    await saveSmp({ name, desc: $('#smpDesc').value.trim(), bg: smpBg }, smpNew);
-    $('#dlgSmp').close(); toast(smpNew ? 'SMP založeno. Ostatní ho uvidí, jakmile budou online.' : 'SMP uloženo.');
+    const id = await saveSmp({ name, desc: $('#smpDesc').value.trim(), bg: smpBg }, smpEditId);
+    $('#dlgSmp').close(); if (smpNew) openSmp(id); toast(smpNew ? 'SMP založeno. Ostatní ho uvidí, jakmile budou online.' : 'SMP uloženo.');
   } catch (ex) { err.textContent = ex.message; }
   finally { $('#smpGo').disabled = false; }
 };
 $('#smpDel').onclick = async () => {
-  if (!confirm('Smazat celé tvoje SMP? Zmizí ze seznamu u všech hráčů. Soubory ve tvé složce zůstanou.')) return;
-  await commit('smps', { ...cat.smps[me.uid], deleted: true });
+  if (!confirm(`Smazat celé SMP „${cat.smps[smpEditId].name}“? Zmizí ze seznamu u všech hráčů. Soubory ve tvé složce zůstanou.`)) return;
+  await commit('smps', { ...cat.smps[smpEditId], deleted: true });
   $('#dlgSmp').close(); location.hash = ''; render();
 };
 
@@ -1365,7 +1404,9 @@ $('#folderPill').onclick = openSettings;
 $('#chUpload').innerHTML = icon('upload', 16) + 'Nahrát video'; $('#chUpload').onclick = () => openUpload(activeSec);
 $('#chNewSec').onclick = () => openSection(null);
 $('#chEdit').onclick = () => openSection(cat.sections[activeSec]);
-$('#chSmp').onclick = () => openSmpDlg(false);
+$('#chSmp').onclick = () => openSmpDlg(activeSmp);
+$('#chSaSmp').onclick = () => superDelete('smps', cat.smps[activeSmp], `celé SMP „${cat.smps[activeSmp].name}“`);
+$('#chSaSec').onclick = () => superDelete('sections', cat.sections[activeSec], `sekci „${cat.sections[activeSec].name}“`);
 $('#chClose').onclick = () => { location.hash = ''; };
 $('#spSearch').oninput = renderChannel;
 $('#heroInvite').innerHTML = icon('link', 16) + 'Pozvat hráče'; $('#heroInvite').onclick = openSettings;
@@ -1391,6 +1432,7 @@ function start() { routeFromHash(); render(); startNet(); setInterval(() => { if
   start();
   const mine = cat.users[me.uid];
   if (!mine?.pub || (isAdmin && !mine.adm)) await commitMe();   // older profiles get their own key
+  else await claimSuper();
 })();
 </script>
 </body>
