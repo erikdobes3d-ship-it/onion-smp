@@ -127,7 +127,14 @@ h2{margin:0;font-size:22px}
 .player.me .pname{font-size:18px}
 .smpcnt{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);color:var(--accent);white-space:nowrap}
 .chat{display:flex;flex-direction:column;gap:10px}.chat h2{margin:0!important}
-.chatlog{display:flex;flex-direction:column;gap:6px;max-height:360px;min-height:60px;overflow-y:auto;padding:10px;border-radius:12px;background:var(--field);border:1px solid var(--border)}
+.chatPane{margin-top:18px;padding:18px;border-radius:16px;background:var(--surface);border:1px solid var(--border)}
+.chatHead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px}
+.chatlog{display:flex;flex-direction:column;gap:10px;height:calc(100vh - 330px);min-height:380px;overflow-y:auto;padding:16px;border-radius:12px;background:var(--field);border:1px solid var(--border)}
+.chatPane .cmsg{font-size:16px;line-height:1.45;padding:8px 12px;border-radius:12px;background:var(--surface2);max-width:85%;align-self:flex-start}
+.chatPane .cmsg.mine{align-self:flex-end;background:color-mix(in srgb,var(--accent) 20%,var(--surface2))}
+.chatPane .cmsg b{display:block;margin:0 0 2px;font-size:14px}
+.chatform input{min-height:52px;font-size:16px}.chatform .btn{min-height:52px;padding:0 22px}
+.chips button.chatTab{border-color:var(--accent)}
 .cmsg{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.35}
 .cmsg .cb{min-width:0;flex:1;word-break:break-word}
 .cmsg b{color:var(--accent);margin-right:6px}.cmsg.mine b{color:var(--ok)}
@@ -222,20 +229,19 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
     <div class="empty hidden" id="empty">Tady zatím nejsou žádná videa.</div>
    </div>
    <aside class="spAside">
-    <div class="box2 chat" style="border-top:1px solid var(--border);padding-top:18px">
-     <h2>Chat SMP <span class="hint" id="chatCnt" style="font-weight:400"></span></h2>
-     <div class="chatlog" id="chatLog" aria-live="polite"></div>
-     <form class="chatform" id="chatForm">
-      <input type="text" id="chatIn" maxlength="300" placeholder="Napiš zprávu…" aria-label="Zpráva do chatu SMP" autocomplete="off">
-      <button type="submit" class="btn" id="chatGo">Odeslat</button>
-     </form>
-     <div class="hint">Zprávy uvidí všichni hráči v tomhle SMP. Kdo je offline, dostane je po připojení.</div>
-    </div>
     <div class="box2"><h2>O tomhle SMP</h2><p class="muted" id="spAbout" style="margin:0;font-size:14px;white-space:pre-line"></p></div>
     <div class="box2"><h2>Admin</h2><div id="spAdmin"></div></div>
     <div class="box2"><h2>Naposledy přidané</h2><div id="spRecent"></div></div>
    </aside>
   </div>
+  <section class="chatPane chat hidden" id="chatPane" aria-label="Chat SMP">
+   <div class="chatHead"><h2>Chat SMP <span class="hint" id="chatCnt" style="font-weight:400"></span></h2><span class="hint">Zprávy uvidí všichni hráči. Kdo je offline, dostane je po připojení.</span></div>
+   <div class="chatlog" id="chatLog" aria-live="polite"></div>
+   <form class="chatform" id="chatForm">
+    <input type="text" id="chatIn" maxlength="300" placeholder="Napiš zprávu…" aria-label="Zpráva do chatu SMP" autocomplete="off">
+    <button type="submit" class="btn" id="chatGo">Odeslat</button>
+   </form>
+  </section>
  </div>
 </div>
 
@@ -1012,9 +1018,13 @@ function renderChannel() {
   document.querySelectorAll('.ownerOnly').forEach(e => e.classList.toggle('hidden', !mine));
   document.querySelectorAll('.superOnly').forEach(e => e.classList.toggle('hidden', !sup));
   const secs = secsOf(x.id), all = vidsOf(x.id), ids = new Set(secs.map(s => s.id));
-  if (activeSec !== 'all' && activeSec !== '_none' && !ids.has(activeSec)) activeSec = 'all';
-  $('#chEdit').classList.toggle('hidden', !mine || activeSec === 'all' || activeSec === '_none');
-  $('#chSaSec').classList.toggle('hidden', !sup || activeSec === 'all' || activeSec === '_none');
+  if (activeSec !== 'all' && activeSec !== '_none' && activeSec !== 'chat' && !ids.has(activeSec)) activeSec = 'all';
+  const realSec = !['all', '_none', 'chat'].includes(activeSec), inChat = activeSec === 'chat';
+  $('#chEdit').classList.toggle('hidden', !mine || !realSec);
+  $('#chSaSec').classList.toggle('hidden', !sup || !realSec);
+  $('.spCols').classList.toggle('hidden', inChat);
+  $('#spSearch').classList.toggle('hidden', inChat);
+  $('#chatPane').classList.toggle('hidden', !inChat);
   // banner
   const bn = $('#spBanner'); bn.classList.toggle('img', okImg(x.bg));
   bn.style.backgroundImage = okImg(x.bg) ? `url("${x.bg}")` : 'none';
@@ -1032,6 +1042,8 @@ function renderChannel() {
   const orphans = all.filter(v => !ids.has(v.section)).length;
   if (orphans) opts.push(['_none', 'Nezařazené', orphans]);
   for (const [id, n, c] of opts) chips.append(el('button', { type: 'button', 'aria-pressed': String(id === activeSec), text: `${n} (${c})`, onclick: () => { activeSec = id; renderChannel(); } }));
+  chips.append(el('button', { type: 'button', class: 'chatTab', 'aria-pressed': String(inChat), text: `💬 Chat (${chatOf(x.id).length})`, onclick: () => { activeSec = 'chat'; renderChannel(); renderChat(true); $('#chatIn').focus(); } }));
+  if (inChat) return;
   const cur = cat.sections[activeSec];
   $('#chTitle').textContent = activeSec === 'all' ? 'Všechna videa' : activeSec === '_none' ? 'Nezařazené' : cur.name;
   $('#chDesc').textContent = activeSec === 'all' ? '' : activeSec === '_none' ? 'Videa bez sekce' : (cur.desc || '');
@@ -1540,7 +1552,7 @@ $('#adminBtn').onclick = openAdmin;
 $('#settingsBtn').innerHTML = icon('gear', 18);
 $('#settingsBtn').onclick = openSettings;
 $('#folderPill').onclick = openSettings;
-$('#chUpload').innerHTML = icon('upload', 16) + 'Nahrát video'; $('#chUpload').onclick = () => openUpload(activeSec);
+$('#chUpload').innerHTML = icon('upload', 16) + 'Nahrát video'; $('#chUpload').onclick = () => openUpload(activeSec === 'chat' ? null : activeSec);
 $('#chNewSec').onclick = () => openSection(null);
 $('#chEdit').onclick = () => openSection(cat.sections[activeSec]);
 $('#chSmp').onclick = () => openSmpDlg(activeSmp);
