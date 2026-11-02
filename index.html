@@ -121,8 +121,20 @@ h2{margin:0;font-size:22px}
 .vmeta{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
 .vactions{display:flex;gap:6px;margin-top:auto;padding-top:6px}
 .empty{padding:30px;text-align:center;color:var(--muted)}
-.players{display:flex;flex-wrap:wrap;gap:10px}
+.players{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .player{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r1);background:var(--surface);border:1px solid var(--border)}
+.player.me{order:-1;padding:14px 18px;border:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface));box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent)}
+.player.me .pname{font-size:18px}
+.smpcnt{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);color:var(--accent);white-space:nowrap}
+.chat{display:flex;flex-direction:column;gap:10px}.chat h2{margin:0!important}
+.chatlog{display:flex;flex-direction:column;gap:6px;max-height:360px;min-height:60px;overflow-y:auto;padding:10px;border-radius:12px;background:var(--field);border:1px solid var(--border)}
+.cmsg{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.35}
+.cmsg .cb{min-width:0;flex:1;word-break:break-word}
+.cmsg b{color:var(--accent);margin-right:6px}.cmsg.mine b{color:var(--ok)}
+.cmsg time{font-size:11px;color:var(--muted);margin-left:6px;white-space:nowrap}
+.cmsg button{flex:none;border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:2px 6px;border-radius:6px}
+.cmsg button:hover{color:var(--danger);background:var(--surface2)}
+.chatform{display:flex;gap:8px}.chatform input{flex:1;min-width:0}
 .badge{font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--accent);color:var(--onaccent)}
 dialog{width:min(560px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;padding:0;border:1px solid var(--border);border-radius:18px;background:var(--surface);color:var(--text)}
 dialog.wide{width:min(960px,calc(100vw - 24px))}
@@ -187,6 +199,7 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
     <button type="button" class="btn sec ownerOnly" id="chNewSec">Nová sekce</button>
     <button type="button" class="btn sec ownerOnly" id="chEdit">Upravit sekci</button>
     <button type="button" class="btn sec ownerOnly" id="chSmp">Upravit SMP</button>
+    <button type="button" class="btn danger ownerOnly" id="chDelSmp">Smazat SMP</button>
     <button type="button" class="btn danger superOnly" id="chSaSec">Smazat sekci</button>
     <button type="button" class="btn danger superOnly" id="chSaSmp">Smazat SMP</button>
    </div>
@@ -209,6 +222,15 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
     <div class="empty hidden" id="empty">Tady zatím nejsou žádná videa.</div>
    </div>
    <aside class="spAside">
+    <div class="box2 chat" style="border-top:1px solid var(--border);padding-top:18px">
+     <h2>Chat SMP <span class="hint" id="chatCnt" style="font-weight:400"></span></h2>
+     <div class="chatlog" id="chatLog" aria-live="polite"></div>
+     <form class="chatform" id="chatForm">
+      <input type="text" id="chatIn" maxlength="300" placeholder="Napiš zprávu…" aria-label="Zpráva do chatu SMP" autocomplete="off">
+      <button type="submit" class="btn" id="chatGo">Odeslat</button>
+     </form>
+     <div class="hint">Zprávy uvidí všichni hráči v tomhle SMP. Kdo je offline, dostane je po připojení.</div>
+    </div>
     <div class="box2"><h2>O tomhle SMP</h2><p class="muted" id="spAbout" style="margin:0;font-size:14px;white-space:pre-line"></p></div>
     <div class="box2"><h2>Admin</h2><div id="spAdmin"></div></div>
     <div class="box2"><h2>Naposledy přidané</h2><div id="spRecent"></div></div>
@@ -273,7 +295,7 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
   <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:600">Obrázek na pozadí
    <div class="bgprev" id="smpPrev"></div>
    <div class="row"><label class="btn sec small" style="cursor:pointer">Vybrat obrázek<input type="file" id="smpBg" accept="image/*" class="hidden"></label><button type="button" class="btn ghost small" id="smpBgDel">Bez obrázku</button></div>
-   <span class="hint">Obrázek se zmenší na 640 × 256 px. Ideální je široký snímek ze hry.</span>
+   <span class="hint">Obrázek se uloží v rozlišení až 1920 × 768 px. Ideální je široký snímek ze hry (Full HD a víc).</span>
   </div>
   <div class="err" id="smpErr" role="alert"></div>
   <div class="row" style="justify-content:space-between">
@@ -396,7 +418,8 @@ const ICONS = {
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21 c1 -5 15 -5 16 0"/>',
   gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2 v3 M12 19 v3 M2 12 h3 M19 12 h3 M4.9 4.9 l2.1 2.1 M17 17 l2.1 2.1 M4.9 19.1 l2.1 -2.1 M17 7 l2.1 -2.1"/>',
   link: '<path d="M10 14 a4 4 0 0 0 6 0 l3 -3 a4 4 0 0 0 -6 -6 l-1 1 M14 10 a4 4 0 0 0 -6 0 l-3 3 a4 4 0 0 0 6 6 l1 -1"/>',
-  edit: '<path d="M4 20 h4 L19 9 l-4 -4 L4 16 Z"/>'
+  edit: '<path d="M4 20 h4 L19 9 l-4 -4 L4 16 Z"/>',
+  trash: '<path d="M4 7 h16 M9 7 V4 h6 v3 M6 7 l1 13 h10 l1 -13 M10 11 v6 M14 11 v6"/>'
 };
 const icon = (n, s = 18) => `<svg aria-hidden="true" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]}</svg>`;
 // isometric pixel block in the colours of the current variant (mode: 'off' = grey, 'mono' = light watermark)
@@ -521,7 +544,7 @@ async function pubKey(pub) {
 }
 const userVerifyKey = uid => pubKey(cat.users[uid]?.pub);
 // super admin: the player named SUPER, pinned once (with his key) in the group record signed by the group key
-const SUPER = 'erik3d', MAX_SMP = 3;
+const SUPER = 'erik3d', MAX_SMP = 3, BG_MAX = 1000000, CHAT_DAYS = 90, CHAT_LEN = 300;
 const iAmSuper = () => !!(cat.group?.sa && cat.group.sa === me?.uid && canon(cat.group.saPub) === canon(userPub));
 const bySuper = async e => !!(e.deleted && cat.group?.sa && e.by === cat.group.sa && await verify(e, await pubKey(cat.group.saPub)));
 const admText = u => `adm:${u.id}:${canon(u.pub)}`;
@@ -532,7 +555,7 @@ async function verify(o, key = verifyKey) {
 
 /* ================= State & catalog ================= */
 let me = null;                 // {uid, name, gid}
-let cat = { group: null, users: {}, removed: {}, grants: {}, requests: {}, smps: {}, sections: {}, videos: {}, holders: {} };
+let cat = { group: null, users: {}, removed: {}, grants: {}, requests: {}, smps: {}, sections: {}, videos: {}, holders: {}, chat: {} };
 let isAdmin = false, activeSec = null, netState = 'off';
 const gid = () => me && me.gid;
 
@@ -584,7 +607,7 @@ async function mergeCat(inc) {
   for (const [id, e] of Object.entries(inc.smps || {})) {
     if (!e || e.id !== id || !e.owner || typeof e.name !== 'string' || !newer(e, cat.smps[id])) continue;
     if (cat.smps[id] && cat.smps[id].owner !== e.owner) continue;
-    if (e.bg != null && !(typeof e.bg === 'string' && e.bg.startsWith('data:image/jpeg;base64,') && e.bg.length < 400000)) continue;
+    if (e.bg != null && !(typeof e.bg === 'string' && e.bg.startsWith('data:image/jpeg;base64,') && e.bg.length < BG_MAX)) continue;
     if (e.by === e.owner) {
       if (!e.deleted && !canOwnSmp(e.owner)) continue;
       if (!e.deleted && (!cat.smps[id] || cat.smps[id].deleted) && smpsOf(e.owner).length >= MAX_SMP) continue;
@@ -601,6 +624,13 @@ async function mergeCat(inc) {
     if (!e || e.id !== id || !e.smp || !e.owner || !newer(e, cat.videos[id])) continue;
     if (cat.videos[id] && cat.videos[id].owner !== e.owner) continue;   // nobody can steal a video
     if (e.by === e.owner ? await verify(e, await userVerifyKey(e.owner)) : await bySuper(e)) { cat.videos[id] = e; changed = true; }
+  }
+  // chat messages: signed by their author; the author or the super admin may delete them
+  const cutoff = Date.now() - CHAT_DAYS * 864e5;
+  for (const [id, e] of Object.entries(inc.chat || {})) {
+    if (!e || e.id !== id || typeof e.smp !== 'string' || !e.author || typeof e.text !== 'string' || e.text.length > CHAT_LEN || !(e.ts > cutoff) || !newer(e, cat.chat[id])) continue;
+    if (cat.chat[id] && cat.chat[id].author !== e.author) continue;
+    if (e.by === e.author ? await verify(e, await userVerifyKey(e.author)) : await bySuper(e)) { cat.chat[id] = e; changed = true; }
   }
   for (const [vid, h] of Object.entries(inc.holders || {})) {
     if (!h || typeof h !== 'object') continue;
@@ -632,12 +662,13 @@ function save() {
     store.saveCatalog(JSON.stringify({ app: APP, v: 1, profile: me, catalog: cat }, null, 1));
   }, 600);
 }
-async function commit(kind, e) {
+async function commit(kind, e, light = false) {
   e.ts = Date.now(); e.by = me.uid; delete e.sig;
   if (kind === 'group' || kind === 'grants' || kind === 'removed') { if (!signKey) throw new Error('Tohle může jen admin.'); await sign(e); }
   else await sign(e, userKey);
   if (kind === 'group') cat.group = e; else cat[kind][e.id] = e;
-  save(); render(); broadcast();
+  save(); render();
+  if (light) sendPart({ [kind]: { [e.id]: e } }); else broadcast();
 }
 async function commitMe() {
   const u = { id: me.uid, name: me.name, pub: userPub };
@@ -744,6 +775,10 @@ function setupConn(c) {
 function broadcast(except) {
   for (const [u, c] of conns) if (u !== except && c.open) c.send({ t: 'cat', gid: gid(), cat });
 }
+// small update (one chat message): only that record goes out, everyone passes it on
+function sendPart(part, except) {
+  for (const [u, c] of conns) if (u !== except && c.open && !u.startsWith('L')) c.send({ t: 'part', gid: gid(), cat: part });
+}
 async function onMsg(uid, c, d) {
   if (!d || typeof d !== 'object') return;
   switch (d.t) {
@@ -753,6 +788,10 @@ async function onMsg(uid, c, d) {
         if ((me.inviter || me.inviters) && cat.group) { delete me.inviter; delete me.inviters; await idb.set('kv', 'me', me); }
         save(); render(); broadcast(uid); connectAll();
       }
+      break;
+    case 'part':
+      if (!cat.group || (d.gid && d.gid !== gid())) return;
+      if (await mergeCat(d.cat)) { save(); render(); sendPart(d.cat, uid); }
       break;
     case 'get': serveMain(c, d, uid); break;
     case 'cancel': { const st = serving.get(d.rid); if (st) st.cancel = true; break; }
@@ -902,7 +941,7 @@ function render() {
   $('#folderPill').innerHTML = icon('folder', 15) + `<span></span>`;
   $('#folderPill span').textContent = `${me.name} · ${store.label()}`;
   $('#folderPill').title = store.mode === 'folder' ? 'Tvoje složka s videi' : 'Videa se ukládají v prohlížeči';
-  renderRail(); renderChannel(); renderPlayers(); renderBanners(); renderNet();
+  renderRail(); renderChannel(); renderPlayers(); renderBanners(); renderNet(); renderChat();
 }
 function miniBtn(v, i) {
   const av = available(v);
@@ -928,7 +967,7 @@ function renderRail() {
     head.append(el('span', { class: 'tag', text: mine ? 'MOJE SMP' : `SMP ${String(i + 1).padStart(2, '0')}` }),
       el('span', { class: 'state' }, el('span', { class: 'dot' + (on ? ' on' : '') }), on ? 'online' : 'offline'));
     const title = el('div', { class: 'coltitle' }, el('h2', { html: blockSvg(24, on ? '' : 'off') }, el('span', { text: x.name })),
-      el('div', { class: 'muted', style: 'font-size:13px;margin-top:4px', text: `Admin: ${nameOf(x.owner)}${x.desc ? ' · ' + x.desc : ''}` }));
+      el('div', { class: 'muted', style: 'font-size:13px;margin-top:4px', text: `Admin: ${nameOf(x.owner)}${x.desc ? ' · ' + x.desc : ''}${chatOf(x.id).length ? ' · 💬 ' + chatOf(x.id).length : ''}` }));
     const mins = Math.round(vids.reduce((a, v) => a + (v.dur || 0), 0) / 60);
     const stats = el('div', { class: 'stats' }, ...[[vids.length, plural(vids.length, 'video', 'videa', 'videí')], [secsOf(x.id).length, plural(secsOf(x.id).length, 'sekce', 'sekce', 'sekcí')], [mins, 'minut']]
       .map(([n, l]) => el('div', { class: 'stat' }, el('b', { text: String(n) }), el('span', { text: l }))));
@@ -937,7 +976,8 @@ function renderRail() {
     if (!shown.length) feed.append(el('div', { class: 'muted', style: 'padding:10px 8px;font-size:13px', text: q ? 'Nic nenalezeno.' : 'Zatím žádná videa.' }));
     const foot = el('div', { class: 'colfoot' },
       el('button', { type: 'button', class: 'btn sec', text: `Otevřít (${vids.length})`, onclick: () => openSmp(x.id) }),
-      mine ? el('button', { type: 'button', class: 'btn', html: icon('upload', 16) + 'Nahrát', onclick: () => openUpload(null, x.id) }) : null);
+      mine ? el('button', { type: 'button', class: 'btn', html: icon('upload', 16) + 'Nahrát', onclick: () => openUpload(null, x.id) }) : null,
+      mine ? el('button', { type: 'button', class: 'btn danger', style: 'flex:0 0 auto;padding:0 12px', title: 'Smazat SMP', 'aria-label': `Smazat SMP ${x.name}`, html: icon('trash', 16), onclick: () => deleteMySmp(x.id) }) : null);
     host.append(el('section', { class: 'col' + (mine ? ' mine' : ''), 'aria-label': x.name }, head, title, stats, el('div', { class: 'feedlbl', text: 'NEJNOVĚJŠÍ' }), feed, foot));
   });
   if (!cat.group) host.append(el('div', { class: 'empty', text: 'Čekám na připojení ke skupině…' }));
@@ -945,7 +985,7 @@ function renderRail() {
     const n = smpsOf(me.uid).length;
     host.append(n < MAX_SMP
       ? el('button', { type: 'button', class: 'newcol', onclick: () => openSmpDlg(null), html: icon('plus', 30) + `<span>${n ? 'Založit další SMP' : 'Založit moje SMP'}</span><span class="hint" style="font-weight:400">Máš ${n} z ${MAX_SMP}. Tvoje SMP uvidí všichni hráči.</span>` })
-      : el('div', { class: 'newcol', style: 'cursor:default', html: icon('lock', 26) + `<span>Máš ${MAX_SMP} z ${MAX_SMP} SMP</span><span class="hint" style="font-weight:400">Na další SMP nejdřív nějaké smaž (Otevřít → Upravit SMP → Smazat).</span>` }));
+      : el('div', { class: 'newcol', style: 'cursor:default', html: icon('lock', 26) + `<span>Máš ${MAX_SMP} z ${MAX_SMP} SMP</span><span class="hint" style="font-weight:400">Na další SMP nejdřív nějaké smaž (červený koš dole ve sloupci).</span>` }));
   } else if (reqPending(me.uid))
     host.append(el('div', { class: 'newcol', style: 'cursor:default', html: icon('lock', 26) + '<span>Žádost odeslána</span><span class="hint" style="font-weight:400">Čeká na schválení adminem. Jakmile ji schválí, můžeš si tu založit svoje SMP.</span>' }));
   else {
@@ -958,7 +998,7 @@ function routeFromHash() {
   const m = /smp=([a-z0-9]+)/.exec(location.hash);
   const next = m ? m[1] : null;
   if (next !== activeSmp) { activeSmp = next; activeSec = 'all'; $('#spSearch').value = ''; window.scrollTo(0, 0); }
-  renderChannel();
+  renderChannel(); renderChat();
 }
 window.addEventListener('hashchange', routeFromHash);
 function renderChannel() {
@@ -1025,15 +1065,20 @@ function renderChannel() {
 }
 function renderPlayers() {
   const host = $('#players'); host.textContent = '';
-  const users = Object.values(cat.users).filter(u => activeUser(u) || u.id === me.uid).sort((a, b) => a.name.localeCompare(b.name, 'cs'));
+  // order: me first, then super admin, admins, online players, then by name
+  const rank = u => u.id === me.uid ? 0 : cat.group?.sa === u.id ? 1 : userIsAdmin(u) ? 2 : 3;
+  const users = Object.values(cat.users).filter(u => activeUser(u) || u.id === me.uid)
+    .sort((a, b) => rank(a) - rank(b) || isOn(b.id) - isOn(a.id) || a.name.localeCompare(b.name, 'cs'));
   for (const u of users) {
-    const on = u.id === me.uid ? netState === 'ok' : online.has(u.id);
+    const on = isOn(u.id), meU = u.id === me.uid;
     const n = liveVideos().filter(v => v.owner === u.id).length;
-    const sm = smpsOf(u.id).map(x => x.name).join(', ') || null;
-    host.append(el('div', { class: 'player' },
-      el('span', { class: 'dot' + (on ? ' on' : '') }),
-      el('div', {}, el('div', { style: 'font-weight:700' }, u.name + (u.id === me.uid ? ' (ty)' : ''), ' ', cat.group?.sa === u.id ? el('span', { class: 'badge', text: 'super admin' }) : userIsAdmin(u) ? el('span', { class: 'badge', text: 'admin' }) : null),
-        el('div', { class: 'muted', style: 'font-size:12px', text: `${on ? 'online' : 'offline'} · ${sm ? sm + ' · ' : ''}${n} videí` })),
+    const own = smpsOf(u.id), k = own.length;
+    host.append(el('div', { class: 'player' + (meU ? ' me' : ''), title: k ? 'SMP: ' + own.map(x => x.name).join(', ') : null },
+      meU ? el('span', { html: blockSvg(30, on ? '' : 'off') }) : el('span', { class: 'dot' + (on ? ' on' : '') }),
+      el('div', {}, el('div', { class: 'pname', style: 'font-weight:700;display:flex;flex-wrap:wrap;align-items:center;gap:6px' }, u.name + (meU ? ' (ty)' : ''),
+          cat.group?.sa === u.id ? el('span', { class: 'badge', text: 'super admin' }) : userIsAdmin(u) ? el('span', { class: 'badge', text: 'admin' }) : null,
+          el('span', { class: 'smpcnt', text: `${k} SMP` })),
+        el('div', { class: 'muted', style: 'font-size:12px', text: `${on ? 'online' : 'offline'} · ${n} ${plural(n, 'video', 'videa', 'videí')}` })),
       isAdmin && u.id !== me.uid ? el('button', { type: 'button', class: 'btn ghost small', 'aria-label': `Odebrat hráče ${u.name}`, title: 'Odebrat hráče', text: '×', style: 'min-height:32px;padding:0 10px', onclick: () => removePlayer(u) }) : null));
   }
 }
@@ -1109,6 +1154,48 @@ function closePlayer(silent) {
 }
 $('#plClose').onclick = () => closePlayer(false);
 $('#dlgPlayer').addEventListener('cancel', () => closePlayer(true));
+
+/* ================= Chat (per SMP, on the opened SMP page) ================= */
+let chatSmp = null;
+const chatOf = smp => Object.values(cat.chat || {}).filter(m => m.smp === smp && !m.deleted && cat.users[m.author]).sort((a, b) => a.ts - b.ts);
+const fmtTime = ts => { const d = new Date(ts), t = d.toLocaleTimeString('cs', { hour: '2-digit', minute: '2-digit' }); return d.toDateString() === new Date().toDateString() ? t : `${d.getDate()}. ${d.getMonth() + 1}. ${t}`; };
+function renderChat(toEnd) {
+  const x = me && activeSmp && cat.smps[activeSmp];
+  if (!x || x.deleted) { chatSmp = null; return; }
+  if (chatSmp !== activeSmp) { chatSmp = activeSmp; toEnd = true; $('#chatIn').value = ''; }
+  const log = $('#chatLog'), atEnd = toEnd || log.scrollHeight - log.scrollTop - log.clientHeight < 30;
+  const msgs = chatOf(activeSmp), sup = iAmSuper();
+  log.textContent = '';
+  $('#chatCnt').textContent = msgs.length ? `(${msgs.length})` : '';
+  if (!msgs.length) log.append(el('div', { class: 'muted', style: 'font-size:13px', text: 'Zatím žádné zprávy. Napiš první!' }));
+  for (const m of msgs) {
+    const mine = m.author === me.uid;
+    log.append(el('div', { class: 'cmsg' + (mine ? ' mine' : '') },
+      el('div', { class: 'cb' }, el('b', { text: nameOf(m.author) }), m.text, el('time', { text: fmtTime(m.ts) })),
+      mine || sup ? el('button', { type: 'button', title: 'Smazat zprávu', 'aria-label': 'Smazat zprávu', text: '×', onclick: () => delChat(m) }) : null));
+  }
+  if (atEnd) log.scrollTop = log.scrollHeight;
+}
+async function delChat(m) {
+  if (m.author !== me.uid && !confirm('Smazat zprávu jako super admin?')) return;
+  await commit('chat', { ...m, text: '', deleted: true }, true);
+}
+$('#chatForm').onsubmit = async e => {
+  e.preventDefault();
+  const text = $('#chatIn').value.trim().slice(0, CHAT_LEN);
+  const smp = activeSmp;
+  if (!text || !smp || !cat.smps[smp]) return;
+  if (!cat.group) return toast('Ještě nejsi připojený ke skupině.');
+  $('#chatIn').value = '';
+  try { await commit('chat', { id: rid(), smp, author: me.uid, text }, true); renderChat(true); }
+  catch (ex) { toast(ex.message); $('#chatIn').value = text; }
+  $('#chatIn').focus();
+};
+// drop old messages so the catalog does not grow forever
+function pruneChat() {
+  const cutoff = Date.now() - CHAT_DAYS * 864e5;
+  for (const [id, m] of Object.entries(cat.chat)) if (!(m.ts > cutoff) || typeof m.smp !== 'string' || (cat.smps[m.smp] && cat.smps[m.smp].deleted)) delete cat.chat[id];
+}
 
 /* ================= Setup / onboarding ================= */
 let setupMode = 'join';
@@ -1349,12 +1436,21 @@ function openSmpDlg(id) {
   $('#smpDel').classList.toggle('hidden', smpNew);
   $('#dlgSmp').showModal();
 }
+// background image: as sharp as possible (up to 1920 × 768, never upscaled), but small enough to sync between players
 async function makeBg(file) {
-  const img = await createImageBitmap(file); const W = 640, H = 256;
-  const c = document.createElement('canvas'); c.width = W; c.height = H;
-  const k = Math.max(W / img.width, H / img.height), w = img.width * k, h = img.height * k;
-  c.getContext('2d').drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
-  return c.toDataURL('image/jpeg', 0.72);
+  const img = await createImageBitmap(file);
+  let out = null;
+  for (const [W0, q] of [[1920, .88], [1920, .8], [1600, .82], [1600, .72], [1280, .75], [1024, .7]]) {
+    const W = Math.min(W0, Math.max(640, img.width)), H = Math.round(W * 0.4);
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const g = c.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    const k = Math.max(W / img.width, H / img.height), w = img.width * k, h = img.height * k;
+    g.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+    out = c.toDataURL('image/jpeg', q);
+    if (out.length < BG_MAX * 0.8) return out;
+  }
+  if (out.length < BG_MAX) return out;
+  throw new Error('big');
 }
 $('#smpBg').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
@@ -1373,11 +1469,17 @@ $('#smpForm').onsubmit = async e => {
   } catch (ex) { err.textContent = ex.message; }
   finally { $('#smpGo').disabled = false; }
 };
-$('#smpDel').onclick = async () => {
-  if (!confirm(`Smazat celé SMP „${cat.smps[smpEditId].name}“? Zmizí ze seznamu u všech hráčů. Soubory ve tvé složce zůstanou.`)) return;
-  await commit('smps', { ...cat.smps[smpEditId], deleted: true });
-  $('#dlgSmp').close(); location.hash = ''; render();
-};
+async function deleteMySmp(id) {
+  const x = cat.smps[id];
+  if (!x || x.deleted || x.owner !== me.uid) return;
+  const n = vidsOf(id).length;
+  if (!confirm(`Smazat celé SMP „${x.name}“${n ? ` i s ${n} ${plural(n, 'videem', 'videi', 'videi')}` : ''}? Zmizí ze seznamu u všech hráčů. Soubory ve tvé složce zůstanou.`)) return;
+  await commit('smps', { ...x, deleted: true });
+  if ($('#dlgSmp').open) $('#dlgSmp').close();
+  if (activeSmp === id) location.hash = '';
+  render(); toast(`SMP „${x.name}“ smazáno. Teď můžeš založit nové.`);
+}
+$('#smpDel').onclick = () => deleteMySmp(smpEditId);
 
 /* ================= Settings ================= */
 // the invite lists several players (online first), so a newcomer can join through whoever is online
@@ -1442,6 +1544,7 @@ $('#chUpload').innerHTML = icon('upload', 16) + 'Nahrát video'; $('#chUpload').
 $('#chNewSec').onclick = () => openSection(null);
 $('#chEdit').onclick = () => openSection(cat.sections[activeSec]);
 $('#chSmp').onclick = () => openSmpDlg(activeSmp);
+$('#chDelSmp').innerHTML = icon('trash', 16) + 'Smazat SMP'; $('#chDelSmp').onclick = () => deleteMySmp(activeSmp);
 $('#chSaSmp').onclick = () => superDelete('smps', cat.smps[activeSmp], `celé SMP „${cat.smps[activeSmp].name}“`);
 $('#chSaSec').onclick = () => superDelete('sections', cat.sections[activeSec], `sekci „${cat.sections[activeSec].name}“`);
 $('#chClose').onclick = () => { location.hash = ''; };
@@ -1461,7 +1564,7 @@ function start() { routeFromHash(); render(); startNet(); setInterval(() => { if
   me = await idb.get('kv', 'me');
   if (!me) return showSetup();
   cat = (await idb.get('kv', 'cat')) || cat;
-  cat.smps = cat.smps || {}; cat.removed = cat.removed || {}; cat.grants = cat.grants || {}; cat.requests = cat.requests || {};
+  cat.smps = cat.smps || {}; cat.removed = cat.removed || {}; cat.grants = cat.grants || {}; cat.requests = cat.requests || {}; cat.chat = cat.chat || {}; pruneChat();
   for (const k of ['sections', 'videos']) for (const [id, e] of Object.entries(cat[k])) if (!e.smp) delete cat[k][id];   // older version without SMPs
   if (cat.group) verifyKey = await importPub(cat.group.pub);
   const priv = await idb.get('kv', 'adminKey');
