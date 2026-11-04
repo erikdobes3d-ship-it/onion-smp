@@ -6,7 +6,7 @@
 <title>minecraft SMP</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1 15 4.5 8 8 1 4.5Z' fill='%236fbf4a'/%3E%3Cpath d='M1 4.5 8 8 8 15 1 11.5Z' fill='%238a5a33'/%3E%3Cpath d='M8 8 15 4.5 15 11.5 8 15Z' fill='%236e4626'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Pixelify+Sans:wght@700&display=swap">
 <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
 <style>
 :root{--headerA:rgba(28,21,15,.94);--field:#140e09;--fieldb:#5a4630;--panel:rgba(34,25,18,.75);--cover:#8a5526;--thumb:#5a3a1f;--bnbg:#6f4a2b;--b1:#f2c94c;--b2:#d9a520;--b3:#a87a12;--bg:#17110c;--surface:#221912;--surface2:#2e2218;--border:#4a3826;--text:#fbf3e8;--muted:#c9b29a;--accent:#e8a14b;--onaccent:#1b1108;--header:#1c150f;--hero:#2a1e14;--ok:#8fd18b;--danger:#e0705a;--r1:12px;--r2:16px;
@@ -17,6 +17,17 @@ html[data-theme=smaragd]{--bg:#0f1a12;--surface:#17251a;--surface2:#1f3223;--bor
 html[data-theme=diamant]{--bg:#0d1620;--surface:#142130;--surface2:#1b2c40;--border:#2f4a66;--text:#eef6fc;--muted:#a8c0d6;--accent:#5ad1e6;--onaccent:#06161b;--header:#101b28;--hero:#172739;--b1:#8ff0f5;--b2:#4cc3d0;--b3:#2a8f9c}
 html[data-theme=redstone]{--bg:#1a0d0d;--surface:#251414;--surface2:#321c1c;--border:#553030;--text:#fdeeee;--muted:#d4abab;--accent:#ff6a55;--onaccent:#1f0806;--header:#1f1010;--hero:#2c1717;--b1:#ff6b5a;--b2:#c83a2e;--b3:#8e231b}
 html[data-theme=ametyst]{--bg:#140f1e;--surface:#1d162b;--surface2:#271e3a;--border:#43345e;--text:#f5f0ff;--muted:#bfb0dc;--accent:#b48cff;--onaccent:#150a26;--header:#181226;--hero:#221a35;--b1:#c9a6ff;--b2:#9a6ae0;--b3:#6a40a8}
+:root{--side:color-mix(in srgb,var(--surface) 75%,var(--bg));--navact:color-mix(in srgb,var(--accent) 18%,var(--surface));--cardsh:none}
+html[data-mode=light]{--bg:#f3f5f1;--surface:#ffffff;--surface2:#eef2ec;--border:#dde4da;--text:#18211b;--muted:#56645b;--header:#ffffff;--hero:#e9f3e5;--field:#ffffff;--fieldb:#c9d3c6;--side:#ffffff;--headerA:rgba(255,255,255,.9);--panel:#ffffff;--ok:#1f7a2d;--danger:#c0392b;--thumb:color-mix(in srgb,var(--accent) 30%,#f3f5f1);--navact:color-mix(in srgb,var(--accent) 14%,#fff);--cardsh:0 1px 2px rgba(20,40,20,.06),0 8px 24px rgba(20,40,20,.07)}
+html[data-mode=light]:not([data-theme]){--accent:#a85f12;--onaccent:#fff}
+html[data-mode=light][data-theme=smaragd]{--accent:#2f8a3b;--onaccent:#fff}
+html[data-mode=light][data-theme=diamant]{--accent:#0f7685;--onaccent:#fff}
+html[data-mode=light][data-theme=redstone]{--accent:#c0392b;--onaccent:#fff}
+html[data-mode=light][data-theme=ametyst]{--accent:#7246c8;--onaccent:#fff}
+html[data-mode=light] .banner{background:#fff6dc;border-color:#e3c56f}
+html[data-mode=light] .banner.err{background:#fdecea;border-color:#e3a59c}
+html[data-mode=light] .btn.danger{color:#fff}
+html[data-mode=light] dialog::backdrop{background:rgba(20,30,20,.45)}
 .themes{display:flex;flex-wrap:wrap;gap:8px}
 .themes button{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border-radius:var(--r1);border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-weight:600}
 .themes button[aria-pressed=true]{border:2px solid var(--accent)}
@@ -26,9 +37,49 @@ html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 var(--f
 body{min-height:100vh;overflow-x:hidden}
 button,input,select,textarea{font:inherit;color:inherit}
 a{color:var(--accent)}
-.wm{position:fixed;right:-80px;top:70px;width:520px;height:520px;opacity:.07;pointer-events:none;z-index:0}
-header{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:12px 28px;background:var(--headerA);border-bottom:1px solid var(--border);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.brand{display:flex;align-items:center;gap:12px;font-size:24px;font-weight:800}.brand span{color:var(--accent)}
+.wm{display:none}
+header.top{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:14px 28px;background:var(--headerA);border-bottom:1px solid var(--border);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+/* ---- layout M1 (tmavý) / M2 (světlý): side menu with shaded pixel icons ---- */
+.shell{display:flex;flex-wrap:wrap;min-height:100vh}
+.side{flex:0 0 256px;box-sizing:border-box;padding:22px 14px;display:flex;flex-direction:column;gap:22px;background:var(--side);border-right:1px solid var(--border);position:relative;z-index:6}
+@media(min-width:900px){.side{position:sticky;top:0;height:100vh;overflow-y:auto}}
+.mainwrap{flex:999 1 640px;min-width:0;position:relative;z-index:1}
+.brand{position:relative;display:flex;align-items:center;gap:10px;padding:14px 8px 4px;color:var(--text);text-decoration:none;font-family:"Pixelify Sans",var(--font);font-weight:700;font-size:21px;white-space:nowrap}
+.brand .bt span{color:var(--accent)}
+.brand{align-self:flex-start}
+.brand.hasSkin{margin-right:30px}
+.lean{position:absolute;left:calc(100% + 1px);bottom:2px;width:24px;height:48px;image-rendering:pixelated;transform:rotate(-13deg);transform-origin:50% 100%;pointer-events:none}
+.lean,.runner,canvas.skinanim{filter:drop-shadow(1px 0 0 rgba(0,0,0,.55)) drop-shadow(-1px 0 0 rgba(0,0,0,.55)) drop-shadow(0 1px 0 rgba(0,0,0,.55)) drop-shadow(0 -1px 0 rgba(0,0,0,.55))}
+.nav{display:flex;flex-direction:column;gap:4px}
+.ni{display:flex;align-items:center;gap:12px;width:100%;min-height:46px;padding:0 12px;border:0;border-radius:12px;background:transparent;color:var(--muted);font-weight:600;font-size:15px;text-align:left;cursor:pointer}
+.ni:hover{background:var(--surface2);color:var(--text)}
+.ni[aria-current=page]{background:var(--navact);color:var(--text);box-shadow:inset 3px 0 0 var(--accent)}
+.px{image-rendering:pixelated;flex:none;display:block}
+.sidefoot{margin-top:auto;display:flex;align-items:center;gap:10px;width:100%;padding:12px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);text-align:left;cursor:pointer}
+.sidefoot b{display:block;font-size:15px}.sidefoot small{display:block;font-size:12px;color:var(--muted)}
+.srch{display:flex;align-items:center;gap:10px;min-height:46px;padding:0 14px;border-radius:12px;background:var(--surface);border:1px solid var(--border);flex:1 1 260px;max-width:440px;box-sizing:border-box}
+.srch input[type=search]{border:0;background:transparent;min-height:44px;padding:0;outline-offset:6px}
+@media(max-width:899px){.side{flex:1 1 100%;padding:12px 14px;gap:10px;border-right:0;border-bottom:1px solid var(--border)}.nav{flex-direction:row;overflow-x:auto;padding-bottom:4px}.ni{width:auto;flex:none}.sidefoot{margin-top:0}}
+.smpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;margin-bottom:26px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--cardsh)}
+.card.mine{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),var(--cardsh)}
+.cv{position:relative;height:140px;background-size:cover;background-position:center;overflow:hidden;cursor:pointer;border:0;padding:0;width:100%;display:block}
+.cv .wmk{position:absolute;right:-18px;top:-14px;opacity:.18}
+.cv .state{position:absolute;right:10px;top:10px}
+.tagm{position:absolute;left:10px;top:10px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.06em;background:var(--accent);color:var(--onaccent)}
+.cb{padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px;flex:1}
+.cb h3{margin:0;font-size:19px;display:flex;align-items:center;gap:8px;word-break:break-word}
+.kp{display:flex;flex-wrap:wrap;gap:8px}.kp span{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:10px;background:var(--surface2);font-size:13px}
+.acts{display:flex;gap:8px;margin-top:auto}.acts .btn{flex:1}
+.smpgrid .newcol{min-height:300px}
+.two{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}
+.pane{flex:2 1 320px;min-width:0;padding:18px;border-radius:18px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--cardsh)}.pane.wide{flex:3 1 400px}
+.pane h2{font-size:20px;margin-bottom:12px}
+.pane .feed{padding:0}
+.mini .smpn{color:var(--accent);font-weight:600}
+#smps,#recentBox,#playersBox{scroll-margin-top:90px}
+.savedtag,.mini small.sv{display:inline-flex;align-items:center;gap:5px}
+.thumb .savedtag img{position:static;inset:auto;width:14px;height:14px}
 .hright{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .pill{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 12px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);font-size:13px;white-space:nowrap}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}.dot.on{background:var(--ok)}
@@ -179,32 +230,39 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
 </head>
 <body>
 <span class="wm" id="wmSlot" aria-hidden="true"></span>
-
-<header>
- <div class="brand"><span id="logoSlot"></span>minecraft <span>SMP</span></div>
+<div class="shell">
+<aside class="side">
+ <a href="#" class="brand" id="brandLink" aria-label="minecraft SMP – domů"><span id="logoSlot"></span><span class="bt">minecraft <span>SMP</span></span><canvas class="lean hidden" id="leanSkin" width="16" height="32" aria-hidden="true"></canvas></a>
+ <nav class="nav" aria-label="Hlavní nabídka">
+  <button type="button" class="ni" data-ic="home" data-nav="home">Domů</button>
+  <button type="button" class="ni" data-ic="smp" data-nav="smps">SMP servery</button>
+  <button type="button" class="ni" data-ic="film" data-nav="recentBox">Naposledy přidané</button>
+  <button type="button" class="ni" data-ic="players" data-nav="playersBox">Hráči</button>
+  <button type="button" class="ni" data-ic="chest" id="navFolder">Moje složka</button>
+  <button type="button" class="ni" data-ic="settings" id="settingsBtn">Nastavení</button>
+ </nav>
+ <button type="button" class="sidefoot" id="adminBtn"></button>
+</aside>
+<div class="mainwrap">
+<header class="top">
+ <label class="srch"><span id="srchIc"></span><span class="hidden">Hledat ve všech SMP</span><input type="search" id="search" placeholder="Hledat videa a SMP" aria-label="Hledat ve všech SMP"></label>
  <div class="hright">
   <span class="pill" id="netPill"><span class="dot"></span><span>Offline</span></span>
   <button type="button" class="pill" id="folderPill" style="cursor:pointer"></button>
-  <button type="button" class="btn" id="adminBtn"></button>
-  <button type="button" class="btn sec" id="settingsBtn" aria-label="Nastavení"></button>
+  <button type="button" class="btn sec" id="heroInvite"></button>
  </div>
 </header>
 
 <main id="home">
  <div id="banners"></div>
- <div class="toolbar">
-  <div><div class="eyebrow" id="groupName">VŠECHNA SMP</div><h1>SMP servery</h1><div class="muted">Každý sloupec je jedno SMP. Když se nevejdou, posuň do strany.</div></div>
-  <div class="row">
-   <input type="search" id="search" placeholder="Hledat ve všech SMP" aria-label="Hledat ve všech SMP" style="width:220px">
-   <button type="button" class="btn sec" id="railL" aria-label="Posunout doleva">‹</button>
-   <button type="button" class="btn sec" id="railR" aria-label="Posunout doprava">›</button>
-   <button type="button" class="btn sec" id="heroInvite"></button>
-  </div>
+ <div class="toolbar" id="smps">
+  <div><div class="eyebrow" id="groupName">VŠECHNA SMP</div><h1>SMP servery</h1><div class="muted">Každá karta je jedno SMP. Kliknutím ho otevřeš.</div></div>
  </div>
- <div class="rail" id="rail"></div>
-
- <div class="between"><h2>Hráči</h2><span class="muted">Videa jdou přehrát, když je jejich autor (nebo někdo, kdo je má uložené) online.</span></div>
- <div class="players" id="players"></div>
+ <div class="smpgrid" id="rail"></div>
+ <div class="two">
+  <section class="pane wide" id="recentBox" aria-label="Naposledy přidaná videa"><h2>Naposledy přidané</h2><div class="feed" id="recent"></div></section>
+  <section class="pane" id="playersBox" aria-label="Hráči"><h2>Hráči</h2><div class="hint" style="margin:-6px 0 12px">Videa jdou přehrát, když je online autor nebo někdo, kdo je má uložené.</div><div class="players" id="players"></div></section>
+ </div>
 </main>
 
 <div id="smpPage" class="hidden">
@@ -230,7 +288,7 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
   <div id="spBanners"></div>
   <div class="between" style="align-items:center">
    <div class="chips" id="chips" role="group" aria-label="Sekce" style="margin:0"></div>
-   <div class="row" id="spTools"><button type="button" class="pill" id="spAvail" aria-pressed="false" style="cursor:pointer">💾 Jen co jde přehrát</button><input type="search" id="spSearch" placeholder="Hledat v SMP" aria-label="Hledat v SMP" style="width:220px"></div>
+   <div class="row" id="spTools"><button type="button" class="pill" id="spAvail" aria-pressed="false" style="cursor:pointer">Jen co jde přehrát</button><input type="search" id="spSearch" placeholder="Hledat v SMP" aria-label="Hledat v SMP" style="width:220px"></div>
   </div>
   <div class="spCols" style="margin-top:18px">
    <div class="spGrid">
@@ -253,6 +311,8 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
    </form>
   </section>
  </div>
+</div>
+</div>
 </div>
 
 <!-- ===== Dialogs ===== -->
@@ -375,7 +435,8 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
  <form class="dlg" id="setForm" method="dialog">
   <h2>Nastavení</h2>
   <label class="f">Tvoje jméno<input type="text" id="stName" maxlength="30"></label>
-  <div class="f">Barva aplikace<div class="themes" id="stThemes" role="group" aria-label="Barva aplikace"></div></div>
+  <div class="f">Vzhled<div class="themes" id="stMode" role="group" aria-label="Vzhled"></div></div>
+  <div class="f">Barva<div class="themes" id="stThemes" role="group" aria-label="Barva aplikace"></div></div>
   <div id="stSkin"></div>
   <div class="box" id="stStore"></div>
   <label class="f">Pozvánka pro další hráče
@@ -438,6 +499,16 @@ const ICONS = {
   edit: '<path d="M4 20 h4 L19 9 l-4 -4 L4 16 Z"/>',
   trash: '<path d="M4 7 h16 M9 7 V4 h6 v3 M6 7 l1 13 h10 l1 -13 M10 11 v6 M14 11 v6"/>'
 };
+const PX = {"home": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAuElEQVR42mNgoCUQEZE4ISIicYJszf+zUv9PtjD9j88QZlyaX4f5mt96+YpBmY+XQZaVSeb0j3+e3759mUPQAGTNMIDPEGZCmgkZwkyMZnyGMBOrGZchjCIiEifqVWTNyYmpxjuPTzLCXMDAwMDwem+++cnLj/FqOnD6HkPP0gsnGRgYGN68eWHBBGNgVbzrNEND3yasBsH0MFGaWgfeABZkTue8g6hhcOU5POBwAUb0lEiMrciBDgDNMm9KlCIeowAAAABJRU5ErkJggg==", "smp": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAk0lEQVR42mNgoBAwwhgiIhInSNH45s0LCwYGBgYWmOaqB27mxGre23uF4eRkhhNv3rywYEGWeHj6DcleYKI0DFiQnaViJ8Fw59ALBgYGBhQ2DGATgxuQ+omfYfahFwz2NyHhepABwYYBmNjlx++xewFZg/1NRoaD6v8ZcMkTFQbYNFA9EIeBAfBoXHvq4cBkJooBANxgNYTSAGrUAAAAAElFTkSuQmCC", "players": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAlUlEQVR42mNkQAMiIhInGPCAN29eWCDzGdE1x5vxm+PSfOruO4brb5lPIhvCgk0RKQDDgEPH5zG8PHMTq+KtRy4zlE/biSLGxEAhwGqAceIcosRwGnB2fgpRYlTxAkYgzpuwhiQDGElJRNgSEwuyZpuDz80Jab41ZxIDw+L2EzBDMLzw/tJ1yqORrgawYPiPREBxLAAAXdA4FH01DXYAAAAASUVORK5CYII=", "chat": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAnUlEQVR42mNgoBAwMjAwMIiISJwgR/ObNy8sGEREJE78JwMsXrz4v4iIxAkWmGkfP34kywtMlIYBhgErV25jSEzMwMvGa8COHZsIspEBC7rA/PkzCLJpGwakAhYGBgaGJUuWwAV8fX1RFGzevJm0lPj69XNzWJrYvHkzQ2Fh6Um8KREZwFLlhw8f4CmNJP/ADCBLM8wAsjUjG0KKegAmA4PRJqasyQAAAABJRU5ErkJggg==", "upload": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAxUlEQVR42mNgwANERCROiIhInMCnhhmf5tRn+ea//v2U+XLpi+e3b1/mEG0ATPOzU48ZBBQEGdgl2XEawoxPMwzgM4SZkGZChjAToxmfIczEasZlCKOIiMQJnUIDc2RF8vZKWDU/PHgPhX+l/8JJRpgLkCWwuebhwXsMV/ovnEQWe/PmhQULjIEcFvi8gKyWgYGBgYmBQkCxASzYnH68+yDe/IHsFXggrlmzxZxYW5ctW8Cwbt2ak/BAhAmSAxiJDX1csQEAYS+CjjqLZmEAAAAASUVORK5CYII=", "settings": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA5klEQVR42mNkwAFERCROIPPfvHlhwUAsEBGROHH0zJX/MJyRU/Af3UAYYMFn0NUrlwhaxsRAIWDG5vyNO/aYI9suKSXNICgkKPPg3gPPb9++zMHwArL/YJrPnTmFYrCRiRkDAwOD+ZoVK04gBywjzEZkf587c4phzYoVJ5ENgBmsraPHwMDAwLB4wRyGNStWnGTBF2CwqEN2Ibo6igORBeYcNL9iTUwMDAwYYcOIrjAkIsLcyMQM7ld8YfPmzQsLFvRkCg1lc2w2r1mx4iR6kmbElZSR0wIuzdQLRGwAOWDxAUZKszMAAm6Eq9ycIIAAAAAASUVORK5CYII=", "play": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAnElEQVR42mNgoDYQEZE4QZFmh1aP/6QYwoIuYFlqz8DAwGB+pf/CCQYGBoY3b15Y4DOACZugvL0SQ+qzfHOdQgNzQq5hwSXx7NRjBnl7JYKuYSLkR0KuYSEmoPC5hoWUWIIZwsDAwHCl/8KJN29eWJBkwMOD9xiu9F84SbILHh68xwC19SR6QLKQYytRBuCzlaABhGylal6gODcCANu0XeosCqYaAAAAAElFTkSuQmCC", "diamond": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAz0lEQVR42mNgoBAwYhMUEZE4gU38zZsXFuhiLNg0B75+bo4ufmHmEgaGmtIT6IYwYtP86uFHrM59tmMzw/2a0pPIhjATq5mBgYGBV0WdgUVOXubXieOe3759mQM3gBjNuAxhFhGROKHY0m3OJCpPdMgjG8L87duXOb9OHPdkkZOX4VVRJ8oA5LBgJCUMsAUkE0ZUkQjgsUCMV/BGIyFDsGnGCUREJE6k/v//3//Bh//+Dz78N52x+D+u5M2EyxBywgPDFaYzFuO1nShDCGkGANcYkpA6o09iAAAAAElFTkSuQmCC", "heart": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAyUlEQVR42q2TPQ6CQBBGH2IHjQmFBcGGjoZOGjsb7sRBIPEgHgF7Kjo7DJsYEkPosMIsyK+43Xyb97KZmYWVR5ELw9jHci1E5o3lAFsZzk/nY1NHaUIAMUBf3kgUGb4/Ret5h50BQDe/5hnBI7sJkXnqEAxQVCVFVX7ltqZjKZhxjb9Z28T/CKI0+VmgluXrEtf4loJpa/osqNVEgCUSGQZQm4s5ki7cEkxJ+uCvVe5uZbMbQ/DoGNdM5vOK0HHr0HHr7mdaJJmC3+ldiiReJ17oAAAAAElFTkSuQmCC", "clock": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABEUlEQVR42qWTPW7CQBBG35pt3YEUflK44gZxWppIViQOkRO44AJ0RHLBAVC6XCBSGhoQlXGFUtJGViKZDrSFG9Kw0dp4TURet6P5vpnVzAgsNJs3sfne7b7vq/KkTZhlga9jr88fhBFxlZEoi7Vwn2QFY/eudTJK16ZJoyzeJxl5qs5azVNF33PxOqK32hwDpQ4zAKcsNhlPljw+zQux4aDNdNT19Vcd/om0Va9jOGgD+GFELC8l37Yk48kSgGSb8/7yUD9Gk2SbA/BZ05zUcz61VaBcrQpRNwUbb4uv331wzG27hgaAUofZanMMvI7o9T33z9UrV3k66vrGqApC4GyVhe2YtJEmjNL1xWO65px/ALOPiLmW7S4QAAAAAElFTkSuQmCC", "film": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAwUlEQVR42sWTvQ2DMBCFXxANtS1AIGUAqnRkAdqskZkSiZYJMgSmoroBkAwY4SYTpIhAkB/FgQJXny3d0713PmDrswMAzv18SXHft0ebcz9PklMMAEQlougAEyYqASC3BjWiElJWwpRHC0MHWndgzIXWHQD8ZKVqSFkJe6oWnC8IpvcPXGQpHH0b3+3XYBpq/grSWjvGWQdFlq4TuIsrPO/pVqn6Kzte8G5hSJUx14hnYwzDfbzEv5SVWP2VN19GPAAMX3xRIGwqdAAAAABJRU5ErkJggg==", "search": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABT0lEQVR42qVTvWrCUBg9SRxEKBH5wCBX6NihpaUIV5wLRfoCboJzt259jk5FQrNlciv0BSoJiG1alxIQocQ/MhQNGbVLIzEmNaUH7vBd7jkczneugAiIFCM8u+60irQgUozex3gdnOub23VUMAohTH567vOB1d960DO70DXVTHIixZF7Zhdj5xMlVkaJlVEgYkPbrvu+194RiCPrmmoOrBenQMT2iYhJdl13WtU11Tw+Pf81NxH/RAYAHu7vUOE1VHgNALiuqQYAxIUauwUixWg0W/xHAIHtcC5Lq4PH16+dbUgA4Ptee2jb9SC0+WyC+WyyIV8evEESRcjZFXMWma0ghWiRGs0WD98trQ5ODmkzv4/cLSfCvioDwNVZnieJCGkrniQipRHwfa/tLDJ1ObtixXwOAFDM5yBnV0xKu++oSODgz8UhUozmxdHml34DK8LEqqAIxh8AAAAASUVORK5CYII=", "chest": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAjUlEQVR42mNgGPKAkYGBgUFEROIEOZrfvHlhwSgiInHicIOsOamaZ+96zrDo2J+TLDCBiw++kuUFJnyS4d1XGR6IpOA1gIWBgYGheM5t7AZA6UV7nuHQzgExoDdFFa8X4lykMMRO3frEcOrJH/xe6OzsJxgGLPgkFd7MoSwQKY4FYgALLFEMWFKmODMBALrsKacMB4XdAAAAAElFTkSuQmCC", "plus": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAlUlEQVR42mNgoBAw4pIQEZE4gcx/8+aFBdEGiIhInEh9lm8O4x/vPshwpf/CSWyGsOBz3rNTjwl6gYnSMGDB5WdC4QLzDiM2P2NzvpSZLAO2MGEh1s+45KgXBse7D6JIyNsrofAfHryHPyGhB2Lqs3xzmLMfHrzHcKX/wklsCYsFW0rDFSPYEhL1wgAdoIcJzTITxQAA3LFKA4teAE4AAAAASUVORK5CYII=", "link": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAhElEQVR42mNgGAWMDAwMDCIiEifI0fzmzQsLRhERiRNrdpwwJ1XzsgXTGdatWHiSBSZw7cp5hgtnUB1iYGLBwMDAgFOcgYGBAW7AhTMnGNatWHgSWWFUQqY5zCZ0cZihTJQGIguys6ISMlHC4tqV8zjFUQxYtmA6Vr8ie49m0TiaExgYACkUNvMPISHbAAAAAElFTkSuQmCC", "shield": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAArUlEQVR42mNgoBAwwhgiIhInSNH45s0LCwYGBgYWmObXrz3NidW8tPMSQ0EPw4k3b15YsCBLfD71mmQvMOGT/HL3LENH/0HyDaDYBfQ1YGnnJfINePPmhUVBz9OTm/Y/J6hh0/7nDAU9T0/C0gETcsJAN2TKpi94NaOkROQU+fq1pzl6msCmGWcgkhseKK5Y0mH8/9NJn/+fTvr8X9Jh/J/UvAI3hCzNyIYQ0gwAEppfKQUvVwEAAAAASUVORK5CYII=", "disk": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAhElEQVR42mNgoBAwwhgiIhInSNH45s0LCwZkzQFX//+HYWxg6sw5cHmtwon/YRayIJv6/tJ1CENLk+Huo+cYtsLlkQATpWHAgk1w2qy5lBmwis+KaAMo9gL1w+BAhCZOxUuWLGGYw2JMOAw+fvw4FMPg1pxJEH/+OYtXw+tTu2mQmSgBALI0S2Q/Mkm0AAAAAElFTkSuQmCC"};
+// shaded pixel icons (own drawings, 16 × 16) used in menus and buttons
+const px = (n, s = 20) => `<img src="${PX[n]}" alt="" width="${s}" height="${s}" class="px">`;
+let mode = 'dark';
+function setMode(m, keep = true) {
+  mode = m === 'light' ? 'light' : 'dark';
+  if (mode === 'light') document.documentElement.dataset.mode = 'light'; else document.documentElement.removeAttribute('data-mode');
+  if (keep) try { localStorage.setItem('mcsmp-mode', mode); } catch { }
+}
+try { setMode(localStorage.getItem('mcsmp-mode'), false); } catch { }
 const icon = (n, s = 18) => `<svg aria-hidden="true" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]}</svg>`;
 // isometric pixel block in the colours of the current variant (mode: 'off' = grey, 'mono' = light watermark)
 function blockSvg(s, mode) {
@@ -958,14 +1029,14 @@ function render() {
   if (!me) return;
   $('#groupName').textContent = 'VŠECHNA SMP · ' + (cat.group?.name || 'minecraft SMP').toUpperCase();
   const nReq = isAdmin ? pendingRequests().length : 0;
-  $('#adminBtn').innerHTML = icon(isAdmin ? 'unlock' : 'lock', 16) + (isAdmin ? 'Admin ✓' : 'Admin') + (nReq ? ` <span class="badge" style="background:var(--text);color:var(--bg)">${nReq}</span>` : '');
+  $('#adminBtn').innerHTML = px('shield', 26) + `<span style="flex:1"><b>${isAdmin ? 'Admin ✓' : 'Admin'}</b><small>${iAmSuper() ? 'super admin' : isAdmin ? 'přihlášen' : 'zadat kód'}</small></span>` + (nReq ? `<span class="badge">${nReq}</span>` : '');
   if ($('#dlgAdmin').open) renderRequests();
-  $('#folderPill').innerHTML = icon('folder', 15) + `<span></span>`;
+  $('#folderPill').innerHTML = px('chest', 18) + `<span></span>`;
   $('#folderPill span').textContent = `${me.name} · ${store.label()}`;
   $('#folderPill').title = store.mode === 'folder' ? 'Tvoje složka s videi' : 'Videa se ukládají v prohlížeči';
-  renderRail(); renderChannel(); renderPlayers(); renderBanners(); renderNet(); renderChat();
+  renderRail(); renderRecent(); renderChannel(); renderPlayers(); renderBanners(); renderNet(); renderChat(); renderSide();
 }
-function miniBtn(v, i) {
+function miniBtn(v, i, withSmp) {
   const av = available(v);
   const mt = el('span', { class: 'mt', style: `background:${THUMBS[i % THUMBS.length]}` });
   if (okImg(v.thumb)) mt.append(el('img', { src: v.thumb, alt: '' }));
@@ -973,48 +1044,47 @@ function miniBtn(v, i) {
   if (v.dur) mt.append(el('span', { class: 'md', text: fmtDur(v.dur) }));
   const when = Math.max(0, Math.round((Date.now() - (v.created || v.ts)) / 864e5));
   return el('button', { type: 'button', class: 'mini' + (av ? '' : ' off'), 'aria-label': `Přehrát ${v.title}`, onclick: () => play(v) }, mt,
-    el('span', { style: 'min-width:0' }, el('b', { text: v.title }), miniNote(v, when)));
+    el('span', { style: 'min-width:0' }, el('b', { text: v.title }), withSmp ? el('small', { class: 'smpn', text: cat.smps[v.smp]?.name || '' }) : null, miniNote(v, when)));
 }
 function miniNote(v, when) {
   const st = vState(v), ago = when ? `před ${when} ${plural(when, 'dnem', 'dny', 'dny')}` : 'dnes';
-  if (st === 'saved') return el('small', { class: 'sv', text: '💾 uloženo u tebe' });
+  if (st === 'saved') return el('small', { class: 'sv', html: px('disk', 13) }, 'uloženo u tebe');
   if (st === 'off') return el('small', { text: `${nameOf(v.owner)} je offline · zatím nestažené` });
   if (st === 'online' && !isOn(v.owner)) return el('small', { text: `${nameOf(v.owner)} je offline · stáhneš od ${nameOf(sourcesFor(v)[0])}` });
   return el('small', { text: ago });
 }
 const offState = (on, vids) => { const n = vids.filter(available).length; return on ? 'online' : vids.length ? `offline · ${n} z ${vids.length} jde přehrát` : 'offline'; };
+const kchip = (ic, n, l) => el('span', { html: px(ic, 18) }, el('b', { text: String(n) }), ' ' + l);
+function smpCard(x, i) {
+  const vids = vidsOf(x.id), on = isOn(x.owner), mine = x.owner === me.uid, nSec = secsOf(x.id).length, nChat = chatOf(x.id).length;
+  const cv = el('button', { type: 'button', class: 'cv', 'aria-label': `Otevřít ${x.name}`, onclick: () => openSmp(x.id) });
+  if (okImg(x.bg)) cv.style.backgroundImage = `url("${x.bg}")`;
+  else { cv.style.backgroundColor = COVERS[i % COVERS.length]; cv.insertAdjacentHTML('afterbegin', `<span class="wmk">${blockSvg(120, 'mono')}</span>`); }
+  if (mine) cv.append(el('span', { class: 'tagm', text: 'MOJE SMP' }));
+  cv.append(el('span', { class: 'state', title: on ? null : 'Offline režim: přehrát jdou videa uložená u tebe nebo u hráčů, kteří jsou online.' }, el('span', { class: 'dot' + (on ? ' on' : '') }), offState(on, vids)));
+  const mins = Math.round(vids.reduce((a, v) => a + (v.dur || 0), 0) / 60);
+  return el('article', { class: 'card' + (mine ? ' mine' : ''), 'aria-label': x.name }, cv,
+    el('div', { class: 'cb' },
+      el('h3', { html: blockSvg(22, on ? '' : 'off') }, el('span', { text: x.name })),
+      el('p', { class: 'muted', style: 'margin:0;font-size:14px', text: `Admin: ${nameOf(x.owner)}${x.desc ? ' · ' + x.desc : ''}` }),
+      el('div', { class: 'kp' }, kchip('film', vids.length, plural(vids.length, 'video', 'videa', 'videí')), kchip('smp', nSec, plural(nSec, 'sekce', 'sekce', 'sekcí')), kchip('clock', mins, 'min'), nChat ? kchip('chat', nChat, plural(nChat, 'zpráva', 'zprávy', 'zpráv')) : null),
+      el('div', { class: 'acts' },
+        el('button', { type: 'button', class: 'btn sec', text: `Otevřít (${vids.length})`, onclick: () => openSmp(x.id) }),
+        mine ? el('button', { type: 'button', class: 'btn', html: px('upload', 18) + 'Nahrát', onclick: () => openUpload(null, x.id) }) : null,
+        mine ? el('button', { type: 'button', class: 'btn danger', style: 'flex:0 0 auto;padding:0 12px', title: 'Smazat SMP', 'aria-label': `Smazat SMP ${x.name}`, html: icon('trash', 16), onclick: () => deleteMySmp(x.id) }) : null)));
+}
 function renderRail() {
   const host = $('#rail'); host.textContent = '';
   const q = query();
-  const smps = liveSmps();
-  smps.forEach((x, i) => {
-    const vids = vidsOf(x.id), on = isOn(x.owner), mine = x.owner === me.uid;
-    const shown = vids.filter(v => matches(v, q));
-    if (q && !shown.length && !x.name.toLowerCase().includes(q)) return;
-    const head = el('div', { class: 'colhead' + (okImg(x.bg) ? ' img' : '') });
-    if (okImg(x.bg)) head.style.backgroundImage = `url("${x.bg}")`;
-    else { head.style.backgroundColor = COVERS[i % COVERS.length]; head.insertAdjacentHTML('afterbegin', `<span class="wmk">${blockSvg(100, 'mono')}</span>`); }
-    head.append(el('span', { class: 'tag', text: mine ? 'MOJE SMP' : `SMP ${String(i + 1).padStart(2, '0')}` }),
-      el('span', { class: 'state', title: on ? null : 'Offline režim: přehrát jdou videa uložená u tebe nebo u hráčů, kteří jsou online.' }, el('span', { class: 'dot' + (on ? ' on' : '') }), offState(on, vids)));
-    const title = el('div', { class: 'coltitle' }, el('h2', { html: blockSvg(24, on ? '' : 'off') }, el('span', { text: x.name })),
-      el('div', { class: 'muted', style: 'font-size:13px;margin-top:4px', text: `Admin: ${nameOf(x.owner)}${x.desc ? ' · ' + x.desc : ''}${chatOf(x.id).length ? ' · 💬 ' + chatOf(x.id).length : ''}` }));
-    const mins = Math.round(vids.reduce((a, v) => a + (v.dur || 0), 0) / 60);
-    const stats = el('div', { class: 'stats' }, ...[[vids.length, plural(vids.length, 'video', 'videa', 'videí')], [secsOf(x.id).length, plural(secsOf(x.id).length, 'sekce', 'sekce', 'sekcí')], [mins, 'minut']]
-      .map(([n, l]) => el('div', { class: 'stat' }, el('b', { text: String(n) }), el('span', { text: l }))));
-    const feed = el('div', { class: 'feed' });
-    shown.slice(0, 4).forEach((v, k) => feed.append(el('div', { style: 'display:flex;flex-direction:column;gap:2px' }, el('span', { class: 'secbadge', text: secName(v) }), miniBtn(v, k))));
-    if (!shown.length) feed.append(el('div', { class: 'muted', style: 'padding:10px 8px;font-size:13px', text: q ? 'Nic nenalezeno.' : 'Zatím žádná videa.' }));
-    const foot = el('div', { class: 'colfoot' },
-      el('button', { type: 'button', class: 'btn sec', text: `Otevřít (${vids.length})`, onclick: () => openSmp(x.id) }),
-      mine ? el('button', { type: 'button', class: 'btn', html: icon('upload', 16) + 'Nahrát', onclick: () => openUpload(null, x.id) }) : null,
-      mine ? el('button', { type: 'button', class: 'btn danger', style: 'flex:0 0 auto;padding:0 12px', title: 'Smazat SMP', 'aria-label': `Smazat SMP ${x.name}`, html: icon('trash', 16), onclick: () => deleteMySmp(x.id) }) : null);
-    host.append(el('section', { class: 'col' + (mine ? ' mine' : ''), 'aria-label': x.name }, head, title, stats, el('div', { class: 'feedlbl', text: 'NEJNOVĚJŠÍ' }), feed, foot));
+  liveSmps().forEach((x, i) => {
+    if (q && !x.name.toLowerCase().includes(q) && !vidsOf(x.id).some(v => matches(v, q))) return;
+    host.append(smpCard(x, i));
   });
   if (!cat.group) host.append(el('div', { class: 'empty', text: 'Čekám na připojení ke skupině…' }));
   else if (canOwnSmp(me.uid)) {
     const n = smpsOf(me.uid).length;
     host.append(n < MAX_SMP
-      ? el('button', { type: 'button', class: 'newcol', onclick: () => openSmpDlg(null), html: icon('plus', 30) + `<span>${n ? 'Založit další SMP' : 'Založit moje SMP'}</span><span class="hint" style="font-weight:400">Máš ${n} z ${MAX_SMP}. Tvoje SMP uvidí všichni hráči.</span>` })
+      ? el('button', { type: 'button', class: 'newcol', onclick: () => openSmpDlg(null), html: px('plus', 32) + `<span>${n ? 'Založit další SMP' : 'Založit moje SMP'}</span><span class="hint" style="font-weight:400">Máš ${n} z ${MAX_SMP}. Tvoje SMP uvidí všichni hráči.</span>` })
       : el('div', { class: 'newcol', style: 'cursor:default', html: icon('lock', 26) + `<span>Máš ${MAX_SMP} z ${MAX_SMP} SMP</span><span class="hint" style="font-weight:400">Na další SMP nejdřív nějaké smaž (červený koš dole ve sloupci).</span>` }));
   } else if (reqPending(me.uid))
     host.append(el('div', { class: 'newcol', style: 'cursor:default', html: icon('lock', 26) + '<span>Žádost odeslána</span><span class="hint" style="font-weight:400">Čeká na schválení adminem. Jakmile ji schválí, můžeš si tu založit svoje SMP.</span>' }));
@@ -1023,12 +1093,28 @@ function renderRail() {
     host.append(el('button', { type: 'button', class: 'newcol', onclick: requestSmp, html: icon('plus', 26) + `<span>Požádat o vlastní SMP</span><span class="hint" style="font-weight:400">${declined ? 'Minulou žádost admin zamítl. Můžeš požádat znovu.' : 'Admin tvoji žádost schválí a pak si SMP založíš.'}</span>` }));
   }
 }
+function renderRecent() {
+  const host = $('#recent'); host.textContent = '';
+  const q = query(), ok = new Set(liveSmps().map(x => x.id));
+  const list = liveVideos().filter(v => ok.has(v.smp) && matches(v, q)).sort((a, b) => (b.created || b.ts) - (a.created || a.ts)).slice(0, q ? 24 : 8);
+  list.forEach((v, k) => host.append(miniBtn(v, k, true)));
+  if (!list.length) host.append(el('div', { class: 'muted', style: 'padding:8px;font-size:14px', text: q ? 'Nic nenalezeno.' : 'Zatím žádná videa.' }));
+}
+// side menu: active item + the super admin's figure leaning on the app name
+function renderSide() {
+  const inSmp = !!(activeSmp && cat.smps[activeSmp] && !cat.smps[activeSmp].deleted);
+  document.querySelectorAll('.ni[data-nav]').forEach(b => b.toggleAttribute('aria-current', false));
+  const cur = document.querySelector(`.ni[data-nav="${inSmp ? 'smps' : 'home'}"]`); if (cur) cur.setAttribute('aria-current', 'page');
+  const lean = $('#leanSkin'), src = saSkin();
+  lean.classList.toggle('hidden', !src); $('#brandLink').classList.toggle('hasSkin', !!src);
+  if (src && lean.dataset.src !== src) { lean.dataset.src = src; drawSkin(lean, src, true); }
+}
 function openSmp(id) { location.hash = 'smp=' + id; }
 function routeFromHash() {
   const m = /smp=([a-z0-9]+)/.exec(location.hash);
   const next = m ? m[1] : null;
   if (next !== activeSmp) { activeSmp = next; activeSec = 'all'; $('#spSearch').value = ''; window.scrollTo(0, 0); }
-  renderChannel(); renderChat();
+  renderChannel(); renderChat(); if (me) renderSide();
 }
 window.addEventListener('hashchange', routeFromHash);
 function renderChannel() {
@@ -1083,7 +1169,7 @@ function renderChannel() {
     const th = el('button', { type: 'button', class: 'thumb', style: `background:${THUMBS[i % THUMBS.length]}`, 'aria-label': `Přehrát ${v.title}`, onclick: () => play(v) });
     if (okImg(v.thumb)) th.append(el('img', { src: v.thumb, alt: '' }));
     th.append(av ? el('span', { class: 'play', html: icon('play', 20), style: 'color:var(--onaccent)' }) : el('span', { class: 'offtag', text: `${nameOf(v.owner)} je offline · nestažené` }));
-    if (vState(v) === 'saved') th.append(el('span', { class: 'savedtag', text: '💾 uloženo u tebe' }));
+    if (vState(v) === 'saved') th.append(el('span', { class: 'savedtag', html: px('disk', 14) }, 'uloženo u tebe'));
     if (v.dur) th.append(el('span', { class: 'dur', text: fmtDur(v.dur) }));
     const actions = canEdit(v) ? el('div', { class: 'vactions' }, el('button', { type: 'button', class: 'btn sec small', onclick: () => openEdit(v), html: icon('edit', 14) + 'Upravit' }))
       : sup ? el('div', { class: 'vactions' }, el('button', { type: 'button', class: 'btn danger small', text: 'Smazat', onclick: () => superDelete('videos', v, `video „${v.title}“`) })) : null;
@@ -1112,11 +1198,11 @@ function renderPlayers() {
     const n = liveVideos().filter(v => v.owner === u.id).length;
     const own = smpsOf(u.id), k = own.length;
     host.append(el('div', { class: 'player' + (meU ? ' me' : ''), title: k ? 'SMP: ' + own.map(x => x.name).join(', ') : null },
-      cat.group?.sa === u.id && saSkin() ? skinCanvas(saSkin(), 16, 32) : meU ? el('span', { html: blockSvg(30, on ? '' : 'off') }) : el('span', { class: 'dot' + (on ? ' on' : '') }),
+      cat.group?.sa === u.id && saSkin() ? skinCanvas(saSkin(), 16, 32) : el('span', { html: px('players', meU ? 30 : 26), style: on ? '' : 'opacity:.55' }),
       el('div', {}, el('div', { class: 'pname', style: 'font-weight:700;display:flex;flex-wrap:wrap;align-items:center;gap:6px' }, u.name + (meU ? ' (ty)' : ''),
           cat.group?.sa === u.id ? el('span', { class: 'badge', text: 'super admin' }) : userIsAdmin(u) ? el('span', { class: 'badge', text: 'admin' }) : null,
           el('span', { class: 'smpcnt', text: `${k} SMP` })),
-        el('div', { class: 'muted', style: 'font-size:12px', text: `${on ? 'online' : 'offline'} · ${n} ${plural(n, 'video', 'videa', 'videí')}` })),
+        el('div', { class: 'muted', style: 'font-size:12px;display:flex;align-items:center;gap:6px' }, el('span', { class: 'dot' + (on ? ' on' : '') }), `${on ? 'online' : 'offline'} · ${n} ${plural(n, 'video', 'videa', 'videí')}`)),
       isAdmin && u.id !== me.uid ? el('button', { type: 'button', class: 'btn ghost small', 'aria-label': `Odebrat hráče ${u.name}`, title: 'Odebrat hráče', text: '×', style: 'min-height:32px;padding:0 10px', onclick: () => removePlayer(u) }) : null));
   }
 }
@@ -1612,8 +1698,13 @@ function renderThemes() {
     h.append(b);
   }
 }
+function renderMode() {
+  const h = $('#stMode'); h.textContent = '';
+  for (const [k, n, sw] of [['dark', 'Tmavý', '#0e1311'], ['light', 'Světlý', '#f3f5f1']])
+    h.append(el('button', { type: 'button', 'aria-pressed': String(k === mode), onclick: () => { setMode(k); renderMode(); } }, el('i', { style: `background:${sw};border:1px solid var(--border)` }), n));
+}
 function openSettings() {
-  renderThemes(); renderSkinBox();
+  renderMode(); renderThemes(); renderSkinBox();
   $('#stName').value = me.name; $('#stLink').value = inviteLink();
   const b = $('#stStore'); b.textContent = '';
   b.append(el('div', { class: 'hint', style: 'margin-bottom:10px', text: `Vrátnice pro nové hráče: ${lobbyPeer ? 'tento počítač ji drží (č. ' + lobbyPeer.id.split('-').pop() + ')' : 'tento počítač ji nedrží'} · ID: ${me.uid}` }));
@@ -1655,7 +1746,6 @@ $('#stReset').onclick = async () => {
 /* ================= wiring ================= */
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());
 $('#adminBtn').onclick = openAdmin;
-$('#settingsBtn').innerHTML = icon('gear', 18);
 $('#settingsBtn').onclick = openSettings;
 $('#folderPill').onclick = openSettings;
 $('#chUpload').innerHTML = icon('upload', 16) + 'Nahrát video'; $('#chUpload').onclick = () => openUpload(activeSec === 'chat' ? null : activeSec);
@@ -1668,11 +1758,17 @@ $('#chSaSec').onclick = () => superDelete('sections', cat.sections[activeSec], `
 $('#chClose').onclick = () => { location.hash = ''; };
 $('#spSearch').oninput = renderChannel;
 $('#spAvail').onclick = () => { onlyAvail = !onlyAvail; renderChannel(); };
-$('#heroInvite').innerHTML = icon('link', 16) + 'Pozvat hráče'; $('#heroInvite').onclick = openSettings;
-$('#railL').onclick = () => $('#rail').scrollBy({ left: -320, behavior: 'smooth' });
-$('#railR').onclick = () => $('#rail').scrollBy({ left: 320, behavior: 'smooth' });
-$('#search').oninput = () => { renderRail(); renderChannel(); };
-$('#logoSlot').innerHTML = blockSvg(40);
+$('#heroInvite').innerHTML = px('link', 18) + 'Pozvat hráče'; $('#heroInvite').onclick = openSettings;
+document.querySelectorAll('[data-ic]').forEach(e => e.insertAdjacentHTML('afterbegin', px(e.dataset.ic, 24)));
+$('#srchIc').innerHTML = px('search', 20);
+$('#navFolder').onclick = openSettings;
+$('#brandLink').onclick = e => { e.preventDefault(); location.hash = ''; window.scrollTo({ top: 0, behavior: 'smooth' }); };
+document.querySelectorAll('.ni[data-nav]').forEach(b => b.onclick = () => {
+  const go = () => { if (b.dataset.nav === 'home') window.scrollTo({ top: 0, behavior: 'smooth' }); else document.getElementById(b.dataset.nav)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  if (location.hash.includes('smp=')) { location.hash = ''; setTimeout(go, 60); } else go();
+});
+$('#search').oninput = () => { if (activeSmp) location.hash = ''; renderRail(); renderRecent(); };
+$('#logoSlot').innerHTML = blockSvg(34);
 $('#wmSlot').innerHTML = blockSvg(520, '');
 $('#logoSlot').style.display = 'inline-flex';
 
