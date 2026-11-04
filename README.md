@@ -19,7 +19,7 @@ Aplikace musí běžet přes https (GitHub Pages to splňuje). Z disku přes `fi
 - **Až 3 vlastní SMP:** každý hráč se schváleným SMP si jich může založit nejvýš 3 a kdykoli je smazat (Otevřít → Upravit SMP → Smazat SMP).
 - **Super admin erik3d:** admin se jménem `erik3d` se při prvním přihlášení jako admin zapíše do skupiny jako super admin. Může smazat cizí SMP, sekce i videa. Tuhle roli pak už nikdo jiný převzít nemůže.
 - **Vzhled:** moderní rozhraní s bočním menu a stínovanými pixelovými ikonami. V Nastavení si každý vybere **Tmavý** nebo **Světlý** vzhled a jednu z 5 barev (Zlatá, Smaragdová, Diamantová, Rudá, Ametystová). Výchozí je Tmavý a Smaragdová. Volba platí jen pro jeho prohlížeč.
-- **Postavička super admina:** erik3d si v Nastavení načte skin (PNG 64 × 64 px jako v Minecraftu). Postavička se opírá o název „minecraft SMP“ v bočním menu a když kdokoli stahuje nebo nahrává video, běží po liště načítání.
+- **Postavička super admina:** erik3d si v Nastavení načte skin (PNG 64 × 64 px jako v Minecraftu). Postavička stojí vedle názvu „minecraft SMP“ v bočním menu a rukou se o něj opírá a když kdokoli stahuje nebo nahrává video, běží po liště načítání.
 - **Offline režim:** SMP hráče, který není přihlášený, vidí všichni dál. Přehrát z něj jdou videa, která má hráč uložená u sebe (💾 uloženo u tebe), nebo která má uložená někdo, kdo je online. Ve sloupci je vidět „offline · X z Y jde přehrát“ a v SMP je filtr „Jen co jde přehrát“.
 - **Každé SMP je jedna karta** na hlavní stránce. Kliknutím na obrázek nebo „Otevřít“ se SMP otevře na celou stránku. Pod kartami jsou Naposledy přidaná videa ze všech SMP a Hráči.
 

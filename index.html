@@ -47,8 +47,8 @@ header.top{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-ite
 .brand{position:relative;display:flex;align-items:center;gap:10px;padding:14px 8px 4px;color:var(--text);text-decoration:none;font-family:"Pixelify Sans",var(--font);font-weight:700;font-size:21px;white-space:nowrap}
 .brand .bt span{color:var(--accent)}
 .brand{align-self:flex-start}
-.brand.hasSkin{margin-right:30px}
-.lean{position:absolute;left:calc(100% + 1px);bottom:2px;width:24px;height:48px;image-rendering:pixelated;transform:rotate(-13deg);transform-origin:50% 100%;pointer-events:none}
+.brand.hasSkin{margin-right:26px}
+.lean{position:absolute;left:calc(100% - 22px);bottom:2px;width:42px;height:48px;image-rendering:pixelated;pointer-events:none}
 .lean,.runner,canvas.skinanim{filter:drop-shadow(1px 0 0 rgba(0,0,0,.55)) drop-shadow(-1px 0 0 rgba(0,0,0,.55)) drop-shadow(0 1px 0 rgba(0,0,0,.55)) drop-shadow(0 -1px 0 rgba(0,0,0,.55))}
 .nav{display:flex;flex-direction:column;gap:4px}
 .ni{display:flex;align-items:center;gap:12px;width:100%;min-height:46px;padding:0 12px;border:0;border-radius:12px;background:transparent;color:var(--muted);font-weight:600;font-size:15px;text-align:left;cursor:pointer}
@@ -232,7 +232,7 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
 <span class="wm" id="wmSlot" aria-hidden="true"></span>
 <div class="shell">
 <aside class="side">
- <a href="#" class="brand" id="brandLink" aria-label="minecraft SMP – domů"><span id="logoSlot"></span><span class="bt">minecraft <span>SMP</span></span><canvas class="lean hidden" id="leanSkin" width="16" height="32" aria-hidden="true"></canvas></a>
+ <a href="#" class="brand" id="brandLink" aria-label="minecraft SMP – domů"><span id="logoSlot"></span><span class="bt">minecraft <span>SMP</span></span><canvas class="lean hidden" id="leanSkin" width="28" height="32" aria-hidden="true"></canvas></a>
  <nav class="nav" aria-label="Hlavní nabídka">
   <button type="button" class="ni" data-ic="home" data-nav="home">Domů</button>
   <button type="button" class="ni" data-ic="smp" data-nav="smps">SMP servery</button>
@@ -1107,7 +1107,7 @@ function renderSide() {
   const cur = document.querySelector(`.ni[data-nav="${inSmp ? 'smps' : 'home'}"]`); if (cur) cur.setAttribute('aria-current', 'page');
   const lean = $('#leanSkin'), src = saSkin();
   lean.classList.toggle('hidden', !src); $('#brandLink').classList.toggle('hasSkin', !!src);
-  if (src && lean.dataset.src !== src) { lean.dataset.src = src; drawSkin(lean, src, true); }
+  if (src && lean.dataset.src !== src) { lean.dataset.src = src; drawLean(lean, src); }
 }
 function openSmp(id) { location.hash = 'smp=' + id; }
 function routeFromHash() {
@@ -1278,6 +1278,37 @@ function skinFrames(src) {
     });
   })());
   return skinCache.get(src);
+}
+// standing pose for the app name: body upright, right arm (on the viewer's left) reaching out and resting on the letters
+const leanCache = new Map();
+function skinLean(src) {
+  if (!leanCache.has(src)) leanCache.set(src, (async () => {
+    const img = new Image(); img.src = src; await img.decode();
+    const full = img.height >= 64, X = 12;     // the figure stands at x 12…28, the arm reaches into x 0…12
+    const c = document.createElement('canvas'); c.width = 28; c.height = 32;
+    const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
+    const part = (sx, sy, w, h, dx, dy, flip) => {
+      if (!flip) return g.drawImage(img, sx, sy, w, h, dx, dy, w, h);
+      g.save(); g.translate(dx + w, dy); g.scale(-1, 1); g.drawImage(img, sx, sy, w, h, 0, 0, w, h); g.restore();
+    };
+    const limb = (base, over, left, dx, dy) => {
+      part(...(left && full ? left[0] : base), 4, 12, dx, dy, left && !full);
+      if (full) part(...(left ? left[1] : over), 4, 12, dx, dy);
+    };
+    limb([4, 20], [4, 36], null, X + 4, 20);                               // legs
+    limb([4, 20], [4, 36], [[20, 52], [4, 52]], X + 8, 20);
+    part(20, 20, 8, 12, X + 4, 8); if (full) part(20, 36, 8, 12, X + 4, 8);   // body
+    limb([44, 20], [44, 36], [[36, 52], [52, 52]], X + 12, 8);             // left arm hangs down
+    g.save(); g.translate(X + 3, 9); g.rotate(60 * Math.PI / 180);         // right arm: from the shoulder out to the letters
+    limb([44, 20], [44, 36], null, -2, -1); g.restore();
+    part(8, 8, 8, 8, X + 4, 0); part(40, 8, 8, 8, X + 4, 0);               // head + hat layer
+    return c;
+  })());
+  return leanCache.get(src);
+}
+async function drawLean(cv, src) {
+  const fr = await skinLean(src).catch(() => null); if (!fr) return;
+  const g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height); g.drawImage(fr, 0, 0);
 }
 let runTick = 0;
 async function drawSkin(cv, src, still) {
