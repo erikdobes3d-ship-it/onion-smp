@@ -47,9 +47,14 @@ header.top{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-ite
 .brand{position:relative;display:flex;align-items:center;gap:10px;padding:14px 8px 4px;color:var(--text);text-decoration:none;font-family:"Pixelify Sans",var(--font);font-weight:700;font-size:21px;white-space:nowrap}
 .brand .bt span{color:var(--accent)}
 .brand{align-self:flex-start}
-.brand.hasSkin{margin-right:26px}
-.lean{position:absolute;left:calc(100% - 22px);bottom:2px;width:42px;height:48px;image-rendering:pixelated;pointer-events:none}
-.lean,.runner,canvas.skinanim{filter:drop-shadow(1px 0 0 rgba(0,0,0,.55)) drop-shadow(-1px 0 0 rgba(0,0,0,.55)) drop-shadow(0 1px 0 rgba(0,0,0,.55)) drop-shadow(0 -1px 0 rgba(0,0,0,.55))}
+.brand.hasSkin{align-items:flex-end;padding-top:6px}
+.brand.hasSkin #logoSlot{display:none!important}
+.brand.hasSkin .bt{padding-bottom:7px}
+.fig3d{display:block;flex:none;margin:0 -2px -8px -6px;pointer-events:none;animation:figbob 2.6s ease-in-out infinite}
+@keyframes figbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@media(prefers-reduced-motion:reduce){.fig3d{animation:none}}
+html[data-mode=light] .fig3d{filter:drop-shadow(0 0 1px rgba(0,0,0,.45)) drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.runner,canvas.skinanim{filter:drop-shadow(1px 0 0 rgba(0,0,0,.55)) drop-shadow(-1px 0 0 rgba(0,0,0,.55)) drop-shadow(0 1px 0 rgba(0,0,0,.55)) drop-shadow(0 -1px 0 rgba(0,0,0,.55))}
 .nav{display:flex;flex-direction:column;gap:4px}
 .ni{display:flex;align-items:center;gap:12px;width:100%;min-height:46px;padding:0 12px;border:0;border-radius:12px;background:transparent;color:var(--muted);font-weight:600;font-size:15px;text-align:left;cursor:pointer}
 .ni:hover{background:var(--surface2);color:var(--text)}
@@ -232,7 +237,7 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
 <span class="wm" id="wmSlot" aria-hidden="true"></span>
 <div class="shell">
 <aside class="side">
- <a href="#" class="brand" id="brandLink" aria-label="minecraft SMP – domů"><span id="logoSlot"></span><span class="bt">minecraft <span>SMP</span></span><canvas class="lean hidden" id="leanSkin" width="28" height="32" aria-hidden="true"></canvas></a>
+ <a href="#" class="brand" id="brandLink" aria-label="minecraft SMP – domů"><canvas class="fig3d hidden" id="leanSkin" width="1" height="1" aria-hidden="true"></canvas><span id="logoSlot"></span><span class="bt">minecraft <span>SMP</span></span></a>
  <nav class="nav" aria-label="Hlavní nabídka">
   <button type="button" class="ni" data-ic="home" data-nav="home">Domů</button>
   <button type="button" class="ni" data-ic="smp" data-nav="smps">SMP servery</button>
@@ -1107,7 +1112,7 @@ function renderSide() {
   const cur = document.querySelector(`.ni[data-nav="${inSmp ? 'smps' : 'home'}"]`); if (cur) cur.setAttribute('aria-current', 'page');
   const lean = $('#leanSkin'), src = saSkin();
   lean.classList.toggle('hidden', !src); $('#brandLink').classList.toggle('hasSkin', !!src);
-  if (src && lean.dataset.src !== src) { lean.dataset.src = src; drawLean(lean, src); }
+  if (src && lean.dataset.src !== src) { lean.dataset.src = src; drawFigure(lean, src, 84); }
 }
 function openSmp(id) { location.hash = 'smp=' + id; }
 function routeFromHash() {
@@ -1250,7 +1255,9 @@ function renderBanners() {
 /* ================= Super admin's figure (Minecraft skin) running on the progress bars ================= */
 const SKIN_MAX = 40000;
 function okSkin(s) { return typeof s === 'string' && s.startsWith('data:image/png;base64,') && s.length < SKIN_MAX; }
-const saSkin = () => { const u = cat.users[cat.group?.sa]; return u && activeUser(u) && okSkin(u.skin) ? u.skin : null; };
+// erik3d's own skin is built in, so the figure is there even before a skin is loaded in Settings
+const DEFAULT_SKIN = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAABHNCSVQICAgIfAhkiAAAAL56VFh0UmF3IHByb2ZpbGUgdHlwZSBBUFAxAAAYlX1PWwoCMQz87yn2CJNHX8cpsisLorL3/zClrW5BndAkDclM4q7rfT32y/I8Htt+W91SwYDTrJkLgIQGAYhBNZpv6FHIMhtC7H9uMeQUoae+ggneOoIEivbaQHW58eiQFTYzjoJv2qhLnjR0kMuPup/rpe/EKFpv4F5P4+5BFwNJFh9USJJ5L0ls8eAtq8B/6yJNlz8LeTbW1Gvz3fSeM7gX7EVWCn1d+VEAAADpSURBVHic7dpBDoIwFEXRflcGa4F1w1LqzBhMKKTIrfaeGTHI46WC+RCpcTnnXLN/RMTe54+aL/8HFkAHoFkAHYBmAXQA2u498g619/la3a+AnyhgXsf0/ocuItK8jmCiC+UDUkp5WobX9rQM+eCuRV4DyIO3wALoAJIkSZIkSXf7mAmWZnSl5+3ffp5fm2+r+4mQBdABaEHP5Wttf/Pb8/EdoQILoAPQLIAOQLMAOgDNAugANAugA9AunwfQzubvfgVYAB2AVj0PaO2acPZ8ul8BFkAHoFkAHYBmAXQAmgXQAWgWQAegPQFnzqnoHKTpmwAAAABJRU5ErkJggg==';
+const saSkin = () => { const u = cat.users[cat.group?.sa]; return u && activeUser(u) && okSkin(u.skin) ? u.skin : DEFAULT_SKIN; };
 const skinCache = new Map();   // skin data URL -> Promise of 4 walking frames (16 × 32 px, front view)
 function skinFrames(src) {
   if (!skinCache.has(src)) skinCache.set(src, (async () => {
@@ -1279,36 +1286,87 @@ function skinFrames(src) {
   })());
   return skinCache.get(src);
 }
-// standing pose for the app name: body upright, right arm (on the viewer's left) reaching out and resting on the letters
-const leanCache = new Map();
-function skinLean(src) {
-  if (!leanCache.has(src)) leanCache.set(src, (async () => {
+/* ---- 3D figure (design P5): the skin drawn as real boxes with shaded sides, a soft shadow and a little bobbing ---- */
+const SKIN_PARTS = [   // name, box [x, y, z, w, h, d] (feet at y 0), uv of layer 1, uv of layer 2, pivot, how much layer 2 sticks out
+  ['head', [-4, 24, -4, 8, 8, 8], [0, 0], [32, 0], [0, 24, 0], .5],
+  ['body', [-4, 12, -2, 8, 12, 4], [16, 16], [16, 32], [0, 24, 0], .25],
+  ['rarm', [-8, 12, -2, 4, 12, 4], [40, 16], [40, 32], [-6, 22, 0], .25],
+  ['larm', [4, 12, -2, 4, 12, 4], [32, 48], [48, 48], [6, 22, 0], .25],
+  ['rleg', [-4, 0, -2, 4, 12, 4], [0, 16], [0, 32], [-2, 12, 0], .25],
+  ['lleg', [0, 0, -2, 4, 12, 4], [16, 48], [0, 48], [2, 12, 0], .25]];
+const POSE_P5 = { rarm: [-16, -5, 0], larm: [16, 5, 0], rleg: [14, 0, 0], lleg: [-14, 0, 0], head: [0, 0, 18], yaw: 30, pitch: 12 };
+const rot3 = ([x, y, z], ax, deg) => {
+  const a = deg * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+  return ax === 'x' ? [x, y * c - z * s, y * s + z * c] : ax === 'y' ? [x * c + z * s, y, -x * s + z * c] : [x * c - y * s, x * s + y * c, z];
+};
+const fig3dCache = new Map();
+function skin3d(src, pose = POSE_P5, ppu = 4) {       // ppu = canvas pixels per skin pixel
+  const key = src + '|' + ppu;
+  if (!fig3dCache.has(key)) fig3dCache.set(key, (async () => {
     const img = new Image(); img.src = src; await img.decode();
-    const full = img.height >= 64, X = 12;     // the figure stands at x 12…28, the arm reaches into x 0…12
-    const c = document.createElement('canvas'); c.width = 28; c.height = 32;
-    const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
-    const part = (sx, sy, w, h, dx, dy, flip) => {
-      if (!flip) return g.drawImage(img, sx, sy, w, h, dx, dy, w, h);
-      g.save(); g.translate(dx + w, dy); g.scale(-1, 1); g.drawImage(img, sx, sy, w, h, 0, 0, w, h); g.restore();
-    };
-    const limb = (base, over, left, dx, dy) => {
-      part(...(left && full ? left[0] : base), 4, 12, dx, dy, left && !full);
-      if (full) part(...(left ? left[1] : over), 4, 12, dx, dy);
-    };
-    limb([4, 20], [4, 36], null, X + 4, 20);                               // legs
-    limb([4, 20], [4, 36], [[20, 52], [4, 52]], X + 8, 20);
-    part(20, 20, 8, 12, X + 4, 8); if (full) part(20, 36, 8, 12, X + 4, 8);   // body
-    limb([44, 20], [44, 36], [[36, 52], [52, 52]], X + 12, 8);             // left arm hangs down
-    g.save(); g.translate(X + 3, 9); g.rotate(60 * Math.PI / 180);         // right arm: from the shoulder out to the letters
-    limb([44, 20], [44, 36], null, -2, -1); g.restore();
-    part(8, 8, 8, 8, X + 4, 0); part(40, 8, 8, 8, X + 4, 0);               // head + hat layer
+    const t = document.createElement('canvas'); t.width = 64; t.height = 64;
+    const tg = t.getContext('2d'); tg.drawImage(img, 0, 0);
+    const px = tg.getImageData(0, 0, 64, 64).data, full = img.height >= 64;
+    const L = (() => { const v = [-.45, .75, .6], n = Math.hypot(...v); return v.map(a => a / n); })();
+    const quads = [];
+    for (const [name, [x0, y0, z0, w, h, d], uv1, uv2, piv, inf] of SKIN_PARTS) {
+      const legacyLeft = !full && (name === 'larm' || name === 'lleg');
+      const layers = [[legacyLeft ? (name === 'larm' ? [40, 16] : [0, 16]) : uv1, 0]];
+      if (full || name === 'head') layers.push([uv2, inf]);
+      const [rx, rz, ry] = pose[name] || [0, 0, 0];
+      const toWorld = p => {
+        let q = [p[0] - piv[0], p[1] - piv[1], p[2] - piv[2]];
+        q = rot3(rot3(rot3(q, 'y', ry), 'x', rx), 'z', rz);
+        q = [q[0] + piv[0], q[1] + piv[1], q[2] + piv[2]];
+        return rot3(rot3(q, 'y', pose.yaw), 'x', pose.pitch);
+      };
+      const toView = n => rot3(rot3(rot3(rot3(rot3(n, 'y', ry), 'x', rx), 'z', rz), 'y', pose.yaw), 'x', pose.pitch);
+      for (const [[u, v], e] of layers) {
+        const W = w + 2 * e, H = h + 2 * e, D = d + 2 * e, X = x0 - e, Y = y0 - e, Z = z0 - e, sx = W / w, sy = H / h, sz = D / d;
+        const faces = [   // corner of texel (0,0), step along u, step along v, uv start, texels across, texels down, normal
+          [[X, Y + H, Z + D], [sx, 0, 0], [0, -sy, 0], [u + d, v + d], w, h, [0, 0, 1]],
+          [[X + W, Y + H, Z], [-sx, 0, 0], [0, -sy, 0], [u + 2 * d + w, v + d], w, h, [0, 0, -1]],
+          [[X, Y + H, Z], [0, 0, sz], [0, -sy, 0], [u, v + d], d, h, [-1, 0, 0]],
+          [[X + W, Y + H, Z + D], [0, 0, -sz], [0, -sy, 0], [u + d + w, v + d], d, h, [1, 0, 0]],
+          [[X, Y + H, Z], [sx, 0, 0], [0, 0, sz], [u + d, v], w, d, [0, 1, 0]],
+          [[X, Y, Z + D], [sx, 0, 0], [0, 0, -sz], [u + d + w, v], w, d, [0, -1, 0]]];
+        for (const [P0, U, V, [fu, fv], nw, nh, N] of faces) {
+          const n = toView(N); if (n[2] <= .01) continue;
+          const br = .62 + .38 * Math.max(0, n[0] * L[0] + n[1] * L[1] + n[2] * L[2]);
+          for (let i = 0; i < nw; i++) for (let j = 0; j < nh; j++) {
+            const o = ((fv + j) * 64 + fu + i) * 4; if (!px[o + 3]) continue;
+            const ao = N[1] === 0 ? 1 - .1 * j / Math.max(1, nh - 1) : 1, k = br * ao;
+            const pts = [[0, 0], [1, 0], [1, 1], [0, 1]].map(([a, b]) => toWorld([P0[0] + U[0] * (i + a) + V[0] * (j + b), P0[1] + U[1] * (i + a) + V[1] * (j + b), P0[2] + U[2] * (i + a) + V[2] * (j + b)]));
+            quads.push([pts.reduce((m, p) => m + p[2], 0) / 4 + (e ? .02 : 0), pts, `rgb(${Math.min(255, px[o] * k) | 0},${Math.min(255, px[o + 1] * k) | 0},${Math.min(255, px[o + 2] * k) | 0})`]);
+          }
+        }
+      }
+    }
+    quads.sort((a, b) => a[0] - b[0]);
+    let minx = 1e9, maxx = -1e9, miny = 1e9, maxy = -1e9;
+    for (const q of quads) for (const [x, y] of q[1]) { minx = Math.min(minx, x); maxx = Math.max(maxx, x); miny = Math.min(miny, y); maxy = Math.max(maxy, y); }
+    const pad = 4; minx -= pad; maxx += pad; miny -= pad + 2; maxy += pad;
+    const c = document.createElement('canvas'); c.width = Math.ceil((maxx - minx) * ppu); c.height = Math.ceil((maxy - miny) * ppu);
+    const g = c.getContext('2d'), sx0 = x => (x - minx) * ppu, sy0 = y => (maxy - y) * ppu;
+    // soft shadow on the ground under the feet
+    const gx = sx0(0), gy = sy0(0), sh = g.createRadialGradient(gx, gy, 0, gx, gy, 7.5 * ppu);
+    sh.addColorStop(0, 'rgba(0,0,0,.38)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+    g.save(); g.translate(gx, gy); g.scale(1, .2); g.translate(-gx, -gy); g.fillStyle = sh; g.beginPath(); g.arc(gx, gy, 7.5 * ppu, 0, 7); g.fill(); g.restore();
+    g.lineJoin = 'round'; g.lineWidth = .6;
+    for (const [, pts, col] of quads) {
+      g.beginPath(); pts.forEach(([x, y], k) => k ? g.lineTo(sx0(x), sy0(y)) : g.moveTo(sx0(x), sy0(y))); g.closePath();
+      g.fillStyle = g.strokeStyle = col; g.fill(); g.stroke();
+    }
     return c;
   })());
-  return leanCache.get(src);
+  return fig3dCache.get(key);
 }
-async function drawLean(cv, src) {
-  const fr = await skinLean(src).catch(() => null); if (!fr) return;
-  const g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height); g.drawImage(fr, 0, 0);
+async function drawFigure(cv, src, cssH) {
+  const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+  const fig = await skin3d(src, POSE_P5, Math.max(2, Math.round(cssH * dpr / 44 * 2) / 2)).catch(() => null); if (!fig) return;
+  cv.width = fig.width; cv.height = fig.height;
+  cv.style.height = cssH + 'px'; cv.style.width = Math.round(cssH * fig.width / fig.height) + 'px';
+  cv.getContext('2d').drawImage(fig, 0, 0);
 }
 let runTick = 0;
 async function drawSkin(cv, src, still) {
