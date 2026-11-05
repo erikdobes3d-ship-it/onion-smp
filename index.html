@@ -759,6 +759,9 @@ async function pubKey(pub) {
 }
 const userVerifyKey = uid => pubKey(cat.users[uid]?.pub);
 // super admin: the player named SUPER, pinned once (with his key) in the group record signed by the group key
+// HOME_GID: the one group this app belongs to (Erik's). When set, no other group can be founded,
+// joined or received through the lobby. Empty = no lock.
+const HOME_GID = '';
 const SUPER = 'erik3d', MAX_SMP = 3, BG_MAX = 1000000, CHAT_DAYS = 90, CHAT_LEN = 300;
 const iAmSuper = () => !!(cat.group?.sa && cat.group.sa === me?.uid && canon(cat.group.saPub) === canon(userPub));
 const bySuper = async e => !!(e.deleted && cat.group?.sa && e.by === cat.group.sa && await verify(e, await pubKey(cat.group.saPub)));
@@ -780,6 +783,7 @@ async function mergeCat(inc) {
   let changed = false;
   if (inc.group) {
     if (gid() && inc.group.id !== gid()) return false;
+    if (HOME_GID && inc.group.id !== HOME_GID) return false;
     if (!cat.group) {
       const k = await importPub(inc.group.pub).catch(() => null);
       if (!k || !(await verify(inc.group, k))) return false;
@@ -1646,7 +1650,7 @@ function setSetupMode(m) {
 }
 document.querySelectorAll('#setupTabs button').forEach(b => b.onclick = () => setSetupMode(b.dataset.mode));
 // only the main admin (SUPER) may found a group: the tab appears when that name is typed
-const mayCreate = () => $('#sName').value.trim().toLowerCase() === SUPER;
+const mayCreate = () => !HOME_GID && $('#sName').value.trim().toLowerCase() === SUPER;
 $('#sName').addEventListener('input', () => {
   $('#sCreateTab').classList.toggle('hidden', !mayCreate());
   if (!mayCreate() && setupMode === 'create') setSetupMode('join');
@@ -1670,7 +1674,9 @@ $('#setupForm').onsubmit = async e => {
     if (setupMode === 'join') {
       const link = $('#sLink').value.trim(), inv = parseInvite(link);
       if (link && !inv) throw new Error('Tohle není platná pozvánka. Pole nech prázdné, nebo vlož celý odkaz.');
-      me = inv ? { uid: rid(), name, gid: inv.gid, inviters: inv.inviters } : { uid: rid(), name, gid: null };
+      if (inv && HOME_GID && inv.gid !== HOME_GID) throw new Error('Tahle pozvánka je do jiné skupiny. Tady se jde připojit jen do skupiny hlavního admina erik3d.');
+      me = inv ? { uid: rid(), name, gid: inv.gid, inviters: inv.inviters } : { uid: rid(), name, gid: HOME_GID || null };
+      await idb.set('kv', 'adminKey', null); signKey = null; isAdmin = false;   // a joining player starts without admin rights
       await idb.set('kv', 'me', me);
       await loadUserKey(); await commitMe();
     } else {
@@ -2267,6 +2273,10 @@ function start() { routeFromHash(); render(); startNet(); setInterval(() => { if
 (async function boot() {
   await store.init();
   me = await idb.get('kv', 'me');
+  if (me && HOME_GID && me.gid && me.gid !== HOME_GID) {   // profile of another group: nothing is deleted until the player joins again
+    me = null;
+    setTimeout(() => toast('Tvůj profil patřil do jiné skupiny. Připoj se znovu, tvoje videa ve složce zůstanou.', 8000), 500);
+  }
   if (!me) return showSetup();
   cat = (await idb.get('kv', 'cat')) || cat;
   cat.smps = cat.smps || {}; cat.removed = cat.removed || {}; cat.grants = cat.grants || {}; cat.requests = cat.requests || {}; cat.chat = cat.chat || {}; pruneChat();
