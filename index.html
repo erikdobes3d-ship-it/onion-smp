@@ -6,7 +6,7 @@
 <title>minecraft SMP</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1 15 4.5 8 8 1 4.5Z' fill='%236fbf4a'/%3E%3Cpath d='M1 4.5 8 8 8 15 1 11.5Z' fill='%238a5a33'/%3E%3Cpath d='M8 8 15 4.5 15 11.5 8 15Z' fill='%236e4626'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Pixelify+Sans:wght@700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Pixelify+Sans:wght@700&family=Press+Start+2P&family=Silkscreen&family=Caveat:wght@700&display=swap">
 <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
 <style>
 :root{--headerA:rgba(28,21,15,.94);--field:#140e09;--fieldb:#5a4630;--panel:rgba(34,25,18,.75);--cover:#8a5526;--thumb:#5a3a1f;--bnbg:#6f4a2b;--b1:#f2c94c;--b2:#d9a520;--b3:#a87a12;--bg:#17110c;--surface:#221912;--surface2:#2e2218;--border:#4a3826;--text:#fbf3e8;--muted:#c9b29a;--accent:#e8a14b;--onaccent:#1b1108;--header:#1c150f;--hero:#2a1e14;--ok:#8fd18b;--danger:#e0705a;--r1:12px;--r2:16px;
@@ -231,6 +231,70 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
 .toast.show{display:block}
 .hidden{display:none!important}
 @media(max-width:640px){header{padding:10px 14px}main{padding:16px 14px 50px}.hero{padding:22px}.brand{font-size:20px}}
+/* ---- vlastní vzhled SMP (editor E2): jen předem dané volby, žádné cizí CSS ---- */
+#smpPage.looked{background:var(--bg);color:var(--text);min-height:100vh}
+#smpPage.looked.lkimg{background-image:linear-gradient(color-mix(in srgb,var(--bg) 80%,transparent),var(--bg) 520px),var(--lkbg);background-size:100% auto;background-repeat:no-repeat}
+.looked #spName,.looked #chTitle,.lkTitle,.card.looked h3 span{font-family:var(--tfont,var(--font))}
+.looked[data-font=press] #spName,.lkPage[data-font=press] .lkTitle{font-size:clamp(20px,3.2vw,32px);line-height:1.3}
+.card.looked[data-font=press] h3 span{font-size:14px;line-height:1.5}
+.looked[data-font=hand] #spName{font-size:clamp(40px,6vw,60px)}
+.looked[data-lay=big] .videos{grid-template-columns:repeat(auto-fill,minmax(360px,1fr))}
+.looked[data-lay=list] .videos{grid-template-columns:1fr}
+.looked[data-lay=list] .vcard{flex-direction:row}
+.looked[data-lay=list] .thumb{width:240px;flex:none}
+@media(max-width:640px){.looked[data-lay=list] .vcard{flex-direction:column}.looked[data-lay=list] .thumb{width:100%}.looked[data-lay=big] .videos{grid-template-columns:1fr}}
+.fx{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.fx i{position:absolute;left:var(--x);top:-10%;width:var(--s);height:var(--s);display:block;animation:fxfall var(--d) linear var(--dl) infinite}
+.fx.up i{top:auto;bottom:-10%;animation-name:fxrise}
+.fx.snow i{background:#fff;border-radius:2px;opacity:.85}
+.fx.leaves i{background:var(--c);border-radius:1px;animation-name:fxleaf}
+.fx.embers i{background:#ffab4a;box-shadow:0 0 8px #ff6a1a}
+.fx.particles i{background:#c79bff;box-shadow:0 0 8px #b18cff}
+.fx.bubbles i{border:2px solid rgba(255,255,255,.7);border-radius:50%}
+@keyframes fxfall{to{transform:translateY(420px)}}
+@keyframes fxleaf{50%{transform:translate(18px,210px) rotate(180deg)}to{transform:translate(-6px,420px) rotate(360deg)}}
+@keyframes fxrise{0%{opacity:0}15%{opacity:1}to{transform:translateY(-380px);opacity:0}}
+@media(prefers-reduced-motion:reduce){.fx{display:none}}
+dialog.lookDlg{width:min(1200px,calc(100vw - 24px))}
+.lkStep{display:flex;align-items:center;gap:10px;margin:0;font-size:18px}
+.lkStep i{font-style:normal;display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--accent);color:var(--onaccent);font-size:14px}
+.lkThemes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.lkTh{display:flex;flex-direction:column;padding:0;border-radius:14px;overflow:hidden;border:2px solid var(--border);background:var(--surface2);cursor:pointer;text-align:left}
+.lkTh[aria-pressed=true]{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+.lkMini{height:84px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.lkMini b{height:30px;border-radius:6px;display:flex;align-items:flex-end;padding:0 8px 5px;font-size:11px}
+.lkMini span{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.lkMini span i{height:28px;border-radius:4px;display:block}
+.lkTh>div:last-child{padding:8px 10px;font-weight:700}
+.lkCols{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start}
+.lkTune{flex:1 1 400px;display:flex;flex-direction:column;gap:18px}
+.lkPrev{flex:1 1 440px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.lkF{display:flex;flex-direction:column;gap:8px}
+.lkSw{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.lkSw button{width:44px;height:44px;border-radius:12px;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--border);cursor:pointer}
+.lkSw button[aria-pressed=true]{box-shadow:0 0 0 3px var(--text)}
+.lkSw label{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border-radius:12px;border:1px dashed var(--border);font-size:14px;font-weight:600;cursor:pointer}
+.lkSw input[type=color]{width:28px;height:28px;border:0;padding:0;background:none}
+.lkSeg{display:flex;flex-wrap:wrap;gap:8px}
+.lkSeg button{min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);font-weight:600;cursor:pointer}
+.lkSeg button[aria-pressed=true]{border:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--surface2))}
+.lkFonts button{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:6px 14px;min-width:104px}
+.lkFonts button span{font-size:22px;line-height:1.15}.lkFonts button small{font-size:12px;color:var(--muted)}
+.lkImg{width:120px;height:48px;border-radius:10px;background:var(--cover) center/cover;border:1px solid var(--border)}
+.lkPage{border-radius:16px;overflow:hidden;border:1px solid var(--border);background:var(--bg);color:var(--text)}
+.lkPage.lkimg{background-image:linear-gradient(color-mix(in srgb,var(--bg) 80%,transparent),var(--bg) 260px),var(--lkbg);background-size:100% auto;background-repeat:no-repeat}
+.lkBn{position:relative;height:170px;background:var(--bnbg) center/cover;overflow:hidden}
+.lkBn.img::before{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.72),rgba(0,0,0,.1) 60%,rgba(0,0,0,.35))}
+.lkBn>div{position:absolute;left:18px;right:18px;bottom:14px;color:#fff}
+.lkTitle{margin:0 0 2px;font-size:30px;line-height:1.1;word-break:break-word}
+.lkPage .chips{padding:12px 14px 0;margin:0}
+.lkPage .videos{padding:12px 14px 16px;grid-template-columns:repeat(3,1fr);gap:10px}
+.lkPage[data-lay=big] .videos{grid-template-columns:repeat(2,1fr)}
+.lkPage[data-lay=list] .videos{grid-template-columns:1fr}
+.lkPage[data-lay=list] .vcard{flex-direction:row}.lkPage[data-lay=list] .thumb{width:140px;flex:none}
+.lkPage .vinfo{padding:8px 10px}.lkPage .vinfo h4{font-size:13px}
+.lkCardWrap{max-width:330px}
+.card.looked{color:var(--text)}
+#smpPage.looked .thumb,.lkPage.looked .thumb{background:var(--thumb)!important}
 </style>
 </head>
 <body>
@@ -278,6 +342,7 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
     <button type="button" class="btn ownerOnly" id="chUpload"></button>
     <button type="button" class="btn sec ownerOnly" id="chNewSec">Nová sekce</button>
     <button type="button" class="btn sec ownerOnly" id="chEdit">Upravit sekci</button>
+    <button type="button" class="btn sec ownerOnly" id="chLook"></button>
     <button type="button" class="btn sec ownerOnly" id="chSmp">Upravit SMP</button>
     <button type="button" class="btn danger ownerOnly" id="chDelSmp">Smazat SMP</button>
     <button type="button" class="btn danger superOnly" id="chSaSec">Smazat sekci</button>
@@ -384,6 +449,36 @@ video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
    <div class="row" style="margin-left:auto"><button type="button" class="btn sec" data-close>Zrušit</button><button type="submit" class="btn" id="smpGo">Uložit</button></div>
   </div>
  </form>
+</dialog>
+
+<dialog id="dlgLook" class="lookDlg">
+ <div class="dlg">
+  <div class="between" style="align-items:center;gap:12px">
+   <div><h2 style="margin:0">Vzhled SMP</h2><div class="hint" id="lkFor"></div></div>
+   <div class="row"><button type="button" class="btn ghost" id="lkReset">Obnovit výchozí</button><button type="button" class="btn sec" data-close>Zrušit</button><button type="button" class="btn" id="lkSave">Uložit vzhled</button></div>
+  </div>
+  <h3 class="lkStep"><i>1</i>Vyber motiv</h3>
+  <div class="lkThemes" id="lkThemes" role="group" aria-label="Motiv"></div>
+  <div class="lkCols">
+   <section class="lkTune">
+    <h3 class="lkStep"><i>2</i>Dolaď detaily</h3>
+    <div class="lkF"><b>Hlavní barva</b><div class="lkSw" id="lkAcc" role="group" aria-label="Hlavní barva"></div></div>
+    <div class="lkF"><b>Pozadí stránky</b><div class="lkSeg" id="lkBgm" role="group" aria-label="Pozadí stránky"></div></div>
+    <div class="lkF"><b>Písmo názvu</b><div class="lkSeg lkFonts" id="lkFont" role="group" aria-label="Písmo názvu"></div></div>
+    <div class="lkF"><b>Rozložení videí</b><div class="lkSeg" id="lkLay" role="group" aria-label="Rozložení videí"></div></div>
+    <div class="lkF"><b>Obrázek v hlavičce</b><div class="row"><div class="lkImg" id="lkImg"></div><label class="btn sec small" style="cursor:pointer">Změnit obrázek<input type="file" id="lkBg" accept="image/*" class="hidden"></label><button type="button" class="btn ghost small" id="lkBgDel">Bez obrázku</button></div></div>
+    <div class="lkF"><b>Efekt v hlavičce</b><div class="lkSeg" id="lkFx" role="group" aria-label="Efekt v hlavičce"></div></div>
+    <div class="err" id="lkErr" role="alert"></div>
+   </section>
+   <section class="lkPrev">
+    <div class="eyebrow">NÁHLED STRÁNKY SMP</div>
+    <div class="lkPage" id="lkPage" inert></div>
+    <div class="eyebrow" style="margin-top:8px">KARTA NA HLAVNÍ STRÁNCE</div>
+    <div class="lkCardWrap" id="lkCard" inert></div>
+    <div class="hint">Vzhled uvidí všichni hráči, když otevřou tohle SMP. Zbytek aplikace má každý podle svého nastavení.</div>
+   </section>
+  </div>
+ </div>
 </dialog>
 
 <dialog id="dlgSection">
@@ -702,6 +797,7 @@ async function mergeCat(inc) {
     if (!e || e.id !== id || !e.owner || typeof e.name !== 'string' || !newer(e, cat.smps[id])) continue;
     if (cat.smps[id] && cat.smps[id].owner !== e.owner) continue;
     if (e.bg != null && !(typeof e.bg === 'string' && e.bg.startsWith('data:image/jpeg;base64,') && e.bg.length < BG_MAX)) continue;
+    if (!okLook(e.look)) continue;
     if (e.by === e.owner) {
       if (!e.deleted && !canOwnSmp(e.owner)) continue;
       if (!e.deleted && (!cat.smps[id] || cat.smps[id].deleted) && smpsOf(e.owner).length >= MAX_SMP) continue;
@@ -1068,7 +1164,7 @@ function smpCard(x, i) {
   if (mine) cv.append(el('span', { class: 'tagm', text: 'MOJE SMP' }));
   cv.append(el('span', { class: 'state', title: on ? null : 'Offline režim: přehrát jdou videa uložená u tebe nebo u hráčů, kteří jsou online.' }, el('span', { class: 'dot' + (on ? ' on' : '') }), offState(on, vids)));
   const mins = Math.round(vids.reduce((a, v) => a + (v.dur || 0), 0) / 60);
-  return el('article', { class: 'card' + (mine ? ' mine' : ''), 'aria-label': x.name }, cv,
+  const card = el('article', { class: 'card' + (mine ? ' mine' : ''), 'aria-label': x.name }, cv,
     el('div', { class: 'cb' },
       el('h3', { html: blockSvg(22, on ? '' : 'off') }, el('span', { text: x.name })),
       el('p', { class: 'muted', style: 'margin:0;font-size:14px', text: `Admin: ${nameOf(x.owner)}${x.desc ? ' · ' + x.desc : ''}` }),
@@ -1077,6 +1173,8 @@ function smpCard(x, i) {
         el('button', { type: 'button', class: 'btn sec', text: `Otevřít (${vids.length})`, onclick: () => openSmp(x.id) }),
         mine ? el('button', { type: 'button', class: 'btn', html: px('upload', 18) + 'Nahrát', onclick: () => openUpload(null, x.id) }) : null,
         mine ? el('button', { type: 'button', class: 'btn danger', style: 'flex:0 0 auto;padding:0 12px', title: 'Smazat SMP', 'aria-label': `Smazat SMP ${x.name}`, html: icon('trash', 16), onclick: () => deleteMySmp(x.id) }) : null)));
+  applyLook(card, x.look, null);
+  return card;
 }
 function renderRail() {
   const host = $('#rail'); host.textContent = '';
@@ -1142,10 +1240,12 @@ function renderChannel() {
   $('#spAvail').setAttribute('aria-pressed', String(onlyAvail));
   $('#chatPane').classList.toggle('hidden', !inChat);
   // banner
+  const look = applyLook($('#smpPage'), x.look, x.bg);
   const bn = $('#spBanner'); bn.classList.toggle('img', okImg(x.bg));
   bn.style.backgroundImage = okImg(x.bg) ? `url("${x.bg}")` : 'none';
   bn.querySelector('.wmk')?.remove();
   if (!okImg(x.bg)) bn.insertAdjacentHTML('afterbegin', `<span class="wmk">${blockSvg(320, 'mono')}</span>`);
+  lookBanner(bn, look);
   $('#spState').innerHTML = `<span class="dot${on ? ' on' : ''}"></span><span></span>`; $('#spState').lastChild.textContent = offState(on, all);
   $('#spName').textContent = x.name;
   $('#spSub').textContent = `Admin: ${nameOf(x.owner)}${x.desc ? ' · ' + x.desc : ''}`;
@@ -1860,6 +1960,180 @@ $('#search').oninput = () => { if (activeSmp) location.hash = ''; renderRail(); 
 $('#logoSlot').innerHTML = blockSvg(34);
 $('#wmSlot').innerHTML = blockSvg(520, '');
 $('#logoSlot').style.display = 'inline-flex';
+
+/* ================= Vlastní vzhled SMP (editor E2) =================
+   Vzhled je součást podepsaného záznamu SMP (pole `look`). Ukládají se jen názvy voleb
+   a barvy #rrggbb, každá hodnota se před použitím ověří proti seznamu níže,
+   takže cizí počítač nemůže podstrčit vlastní CSS ani kód. */
+const LOOKS = {
+  vychozi: ['Výchozí', {}],
+  les: ['Les', { acc: '#2f7d2b', base: '#3f8f3a', bgm: 'light', font: 'pixel', fx: 'leaves' }],
+  nether: ['Nether', { acc: '#ff7a2f', base: '#b3361c', bgm: 'tint', font: 'press', fx: 'embers' }],
+  end: ['End', { acc: '#e7e2a0', base: '#6a4fc4', bgm: 'dark', font: 'silk', fx: 'particles' }],
+  jeskyne: ['Jeskyně', { acc: '#5ad1e6', base: '#3b5f7a', bgm: 'dark', font: 'pixel', fx: 'none' }],
+  snih: ['Sníh', { acc: '#1d6fa8', base: '#5aa7e0', bgm: 'light', font: 'pixel', fx: 'snow' }],
+  ocean: ['Oceán', { acc: '#3fd0f5', base: '#1366a8', bgm: 'tint', font: 'outfit', fx: 'bubbles' }]
+};
+const LK_ACC = [['#3f8f3a', 'Zelená'], ['#e8a14b', 'Zlatá'], ['#2b8fd6', 'Diamantová'], ['#e0453a', 'Rudá'], ['#8a4fd0', 'Ametystová'], ['#2a9d8f', 'Tyrkysová'], ['#ff7a2f', 'Oranžová'], ['#e7e2a0', 'Endová']];
+const LK_BGM = { light: 'Světlé', dark: 'Tmavé', tint: 'Barevné', img: 'Obrázek' };
+const LK_FONTS = { outfit: ['Moderní', 'var(--font)'], pixel: ['Pixelify', '"Pixelify Sans",var(--font)'], press: ['Press Start', '"Press Start 2P",monospace'], silk: ['Silkscreen', 'Silkscreen,monospace'], hand: ['Ručně psané', 'Caveat,cursive'] };
+const LK_LAY = { tiles: 'Dlaždice', big: 'Velké', list: 'Seznam' };
+const LK_FX = { none: 'Žádný', snow: 'Sníh', leaves: 'Listí', embers: 'Uhlíky', particles: 'Částice', bubbles: 'Bubliny' };
+const HEX6 = /^#[0-9a-f]{6}$/i;
+const okLook = l => l == null || (typeof l === 'object' && !Array.isArray(l) && JSON.stringify(l).length < 400);
+// the stored record -> a full, checked set of values (or null = the app's own look)
+function cleanLook(l) {
+  if (!l || typeof l !== 'object') return null;
+  const t = Object.hasOwn(LOOKS, l.t) ? l.t : 'vychozi', p = LOOKS[t][1];
+  const pick = (v, ok, d) => (typeof v === 'string' && Object.hasOwn(ok, v)) ? v : d;
+  const acc = HEX6.test(l.acc) ? l.acc.toLowerCase() : p.acc || null;
+  return {
+    t, acc, base: p.base || acc,
+    bgm: pick(l.bgm, LK_BGM, p.bgm || (mode === 'light' ? 'light' : 'dark')),
+    font: pick(l.font, LK_FONTS, p.font || 'outfit'),
+    lay: pick(l.lay, LK_LAY, 'tiles'),
+    fx: pick(l.fx, LK_FX, p.fx || 'none')
+  };
+}
+function lum(hex) {
+  const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4);
+  return .2126 * c[0] + .7152 * c[1] + .0722 * c[2];
+}
+function lookVars(L) {
+  if (!L || !L.acc) return null;                            // no colours chosen: keep the app's own
+  const m = (c, p, w) => `color-mix(in srgb,${c} ${p}%,${w})`, b = L.base || L.acc;
+  let P;
+  if (L.bgm === 'light') P = { bg: m(b, 8, '#f7f8f5'), surface: m(b, 2, '#ffffff'), surface2: m(b, 10, '#f1f3ef'), border: m(b, 24, '#dfe4dc'), text: '#17201a', muted: '#4c5a51', field: '#ffffff', fieldb: m(b, 28, '#cfd6cc') };
+  else {
+    const k = L.bgm === 'tint' ? 30 : 14;
+    P = { bg: m(b, k, '#0b0c0d'), surface: m(b, k + 4, '#16181b'), surface2: m(b, k + 8, '#1e2125'), border: m(b, k + 22, '#2c3034'), text: '#f3f4f2', muted: '#bcc2be', field: m(b, k, '#08090a'), fieldb: m(b, k + 22, '#2c3034') };
+  }
+  const bright = lum(L.acc) > .4;
+  if (L.bgm === 'light' && bright) { P.accent = m(L.acc, 55, '#1a1a1a'); P.onaccent = '#ffffff'; }   // readable on white
+  else { P.accent = L.acc; P.onaccent = bright ? '#141414' : '#ffffff'; }
+  Object.assign(P, { thumb: m(L.acc, 26, P.bg), bnbg: m(b, 45, '#000'), cover: m(L.acc, 50, '#000'), panel: P.surface, hero: P.surface2, navact: m(L.acc, 18, P.surface) });
+  return P;
+}
+const LK_VARS = ['bg', 'surface', 'surface2', 'border', 'text', 'muted', 'field', 'fieldb', 'accent', 'onaccent', 'thumb', 'bnbg', 'cover', 'panel', 'hero', 'navact', 'tfont', 'lkbg'];
+function applyLook(node, look, bg) {
+  const L = cleanLook(look), P = lookVars(L);
+  for (const k of LK_VARS) node.style.removeProperty('--' + k);
+  node.classList.toggle('looked', !!L);
+  node.classList.toggle('lkimg', !!(P && L.bgm === 'img' && okImg(bg)));
+  if (!L) { delete node.dataset.lay; delete node.dataset.font; return null; }
+  node.dataset.lay = L.lay; node.dataset.font = L.font;
+  if (P) for (const [k, v] of Object.entries(P)) node.style.setProperty('--' + k, v);
+  node.style.setProperty('--tfont', LK_FONTS[L.font][1]);
+  if (P && L.bgm === 'img' && okImg(bg)) node.style.setProperty('--lkbg', `url("${bg}")`);
+  return L;
+}
+// falling / rising pieces in the banner (pure CSS animation, turned off for reduced motion)
+function fxLayer(kind) {
+  if (!Object.hasOwn(LK_FX, kind) || kind === 'none') return null;
+  const up = kind === 'embers' || kind === 'particles' || kind === 'bubbles';
+  const box = el('div', { class: `fx ${kind}${up ? ' up' : ''}`, 'aria-hidden': 'true' });
+  const leaf = ['#5aa83a', '#8bc34a', '#d98c2b', '#c0582b'];
+  for (let i = 0; i < 26; i++) {
+    const r = n => ((Math.sin(i * 12.9898 + n * 78.233) * 43758.5453) % 1 + 1) % 1;   // stable "random"
+    const s = kind === 'bubbles' ? 6 + r(1) * 10 : kind === 'leaves' ? 5 + r(1) * 4 : 3 + r(1) * 4;
+    const d = (up ? 4 : 6) + r(2) * 6;
+    box.append(el('i', { style: `--x:${(r(3) * 100).toFixed(1)}%;--s:${s.toFixed(1)}px;--d:${d.toFixed(1)}s;--dl:${(-r(4) * d).toFixed(1)}s;--c:${leaf[i % 4]}` }));
+  }
+  return box;
+}
+function lookBanner(bn, L) {
+  const want = L && L.fx !== 'none' ? L.fx : '', old = bn.querySelector('.fx');
+  if (old && old.dataset.k === want) return;                 // keep running animation on re-render
+  old?.remove();
+  const fx = want && fxLayer(want);
+  if (fx) { fx.dataset.k = want; bn.prepend(fx); }
+}
+
+/* ---- editor ---- */
+let lkId = null, lkDraft = {}, lkBgDraft = null;
+const lkSmp = () => ({ ...cat.smps[lkId], look: lkDraft, bg: lkBgDraft });
+function openLook(id) {
+  const x = cat.smps[id];
+  if (!x || x.deleted || x.owner !== me.uid) return;
+  lkId = id; lkBgDraft = x.bg || null;
+  lkDraft = {}; const L = cleanLook(x.look);
+  if (L) for (const k of ['t', 'acc', 'bgm', 'font', 'lay', 'fx']) if (x.look[k] != null && (k === 't' || L[k] != null)) lkDraft[k] = L[k];
+  if (!lkDraft.t) lkDraft.t = 'vychozi';
+  $('#lkFor').textContent = `${x.name} · změny uvidí všichni hráči`; $('#lkErr').textContent = '';
+  renderLook(); $('#dlgLook').showModal();
+}
+const appAccent = () => (THEMES[theme] || THEMES[DEFAULT_THEME])[1];
+function lkSet(k, v) {
+  lkDraft[k] = v;
+  if ((k === 'bgm') && !cleanLook(lkDraft).acc) lkDraft.acc = appAccent();   // colours need a main colour
+  renderLook();
+}
+const pressed = (b, on) => (b.setAttribute('aria-pressed', String(on)), b);
+function renderLook() {
+  const L = cleanLook(lkDraft);
+  // 1. themes
+  const th = $('#lkThemes'); th.textContent = '';
+  for (const [k, [n, p]] of Object.entries(LOOKS)) {
+    const P = lookVars(cleanLook({ t: k })) || { bg: 'var(--bg)', surface: 'var(--surface)', surface2: 'var(--surface2)', accent: 'var(--accent)', text: 'var(--text)' };
+    const mini = el('div', { class: 'lkMini', style: `background:${P.bg}` },
+      el('b', { style: `background:${P.surface2};color:${P.accent};font-family:${LK_FONTS[p.font || 'outfit'][1]}`, text: n }),
+      el('span', {}, el('i', { style: `background:${P.surface}` }), el('i', { style: `background:${P.surface}` }), el('i', { style: `background:${P.accent}` })));
+    th.append(pressed(el('button', { type: 'button', class: 'lkTh', onclick: () => { lkDraft = { t: k, ...(lkDraft.lay ? { lay: lkDraft.lay } : {}) }; renderLook(); } }, mini, el('div', { text: n })), L.t === k));
+  }
+  // 2. details
+  const acc = $('#lkAcc'); acc.textContent = '';
+  for (const [c, n] of LK_ACC) acc.append(pressed(el('button', { type: 'button', style: `background:${c}`, title: n, 'aria-label': n, onclick: () => lkSet('acc', c) }), L.acc === c));
+  const own = el('input', { type: 'color', value: L.acc || appAccent(), 'aria-label': 'Vlastní barva' });
+  own.onchange = () => lkSet('acc', own.value);
+  acc.append(el('label', {}, 'Vlastní ', own));
+  const seg = (host, opts, key, cur, fn) => {
+    host = $(host); host.textContent = '';
+    for (const [k, v] of Object.entries(opts)) host.append(pressed(fn ? fn(k, v) : el('button', { type: 'button', text: v }), cur === k)), host.lastChild.onclick = () => lkSet(key, k);
+  };
+  seg('#lkBgm', LK_BGM, 'bgm', L.acc ? L.bgm : null);
+  $('#lkBgm').lastChild.disabled = !okImg(lkBgDraft); $('#lkBgm').lastChild.title = okImg(lkBgDraft) ? '' : 'Nejdřív nahraj obrázek do hlavičky';
+  seg('#lkFont', LK_FONTS, 'font', L.font, (k, [n, f]) => el('button', { type: 'button' }, el('span', { style: `font-family:${f}${k === 'press' ? ';font-size:15px' : ''}`, text: 'Aa' }), el('small', { text: n })));
+  seg('#lkLay', LK_LAY, 'lay', L.lay);
+  seg('#lkFx', LK_FX, 'fx', L.fx);
+  $('#lkImg').style.backgroundImage = okImg(lkBgDraft) ? `url("${lkBgDraft}")` : 'none';
+  // 3. preview
+  const x = lkSmp(), pg = $('#lkPage'); pg.textContent = '';
+  applyLook(pg, x.look, x.bg);
+  const bn = el('div', { class: 'lkBn' + (okImg(x.bg) ? ' img' : '') });
+  if (okImg(x.bg)) bn.style.backgroundImage = `url("${x.bg}")`;
+  bn.append(el('div', {}, el('h1', { class: 'lkTitle', text: x.name }), el('div', { style: 'font-size:13px;opacity:.9', text: `Admin: ${nameOf(x.owner)}${x.desc ? ' · ' + x.desc : ''}` })));
+  lookBanner(bn, L);
+  const chips = el('div', { class: 'chips' }, pressed(el('button', { type: 'button', text: 'Vše' }), true), ...secsOf(lkId).slice(0, 3).map(s => pressed(el('button', { type: 'button', text: s.name }), false)), el('button', { type: 'button', class: 'chatTab', text: 'Chat' }));
+  const vids = vidsOf(lkId).slice(0, L.lay === 'list' ? 3 : L.lay === 'big' ? 2 : 3);
+  const grid = el('div', { class: 'videos' });
+  (vids.length ? vids : [{ title: 'Ukázkové video' }, { title: 'Další díl' }, { title: 'Nejlepší momenty' }].slice(0, L.lay === 'big' ? 2 : 3)).forEach((v, i) => {
+    const t = el('div', { class: 'thumb', style: `background:${THUMBS[i % THUMBS.length]}` });
+    if (okImg(v.thumb)) t.append(el('img', { src: v.thumb, alt: '' }));
+    t.append(el('span', { class: 'play', html: icon('play', 16), style: 'width:34px;height:34px;color:var(--onaccent)' }));
+    grid.append(el('div', { class: 'vcard' }, t, el('div', { class: 'vinfo' }, el('h4', { text: v.title }), el('div', { class: 'vmeta' }, el('span', { class: 'secbadge', style: 'margin:0', text: v.section ? secName(v) : 'Epizody' })))));
+  });
+  pg.append(bn, chips, grid);
+  const cw = $('#lkCard'); cw.textContent = ''; cw.append(smpCard(x, 0));
+}
+$('#lkBg').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { lkBgDraft = await makeBg(f); renderLook(); } catch { $('#lkErr').textContent = 'Tenhle obrázek nejde načíst.'; }
+  e.target.value = '';
+};
+$('#lkBgDel').onclick = () => { lkBgDraft = null; if (lkDraft.bgm === 'img') delete lkDraft.bgm; renderLook(); };
+$('#lkReset').onclick = () => { lkDraft = { t: 'vychozi' }; renderLook(); };
+$('#lkSave').onclick = async () => {
+  const x = cat.smps[lkId]; if (!x || x.owner !== me.uid) return;
+  const look = {}; for (const [k, v] of Object.entries(lkDraft)) if (v != null) look[k] = v;
+  const empty = look.t === 'vychozi' && Object.keys(look).length === 1;
+  const rec = { ...x, bg: lkBgDraft }; if (empty) delete rec.look; else rec.look = look;
+  if (!okLook(rec.look)) return $('#lkErr').textContent = 'Vzhled nejde uložit.';
+  $('#lkSave').disabled = true;
+  try { await commit('smps', rec); $('#dlgLook').close(); toast('Vzhled uložen. Ostatní ho uvidí, jakmile budou online.'); }
+  catch (ex) { $('#lkErr').textContent = ex.message; }
+  finally { $('#lkSave').disabled = false; }
+};
+$('#chLook').innerHTML = icon('edit', 16) + 'Vzhled SMP'; $('#chLook').onclick = () => openLook(activeSmp);
 
 function start() { routeFromHash(); render(); startNet(); setInterval(() => { if (!cat.group) renderBanners(); }, 2000); }
 
