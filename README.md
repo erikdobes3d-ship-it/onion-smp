@@ -13,7 +13,7 @@ Aplikace musí běžet přes https (GitHub Pages to splňuje). Z disku přes `fi
 
 ## První spuštění
 
-- **Ty (zakladatel):** otevři adresu, zvol „Založit skupinu“, zadej jméno, název skupiny a kód admina, vyber složku. Pak v Nastavení zkopíruj pozvánku.
+- **Zakladatel (jen erik3d):** skupinu může založit jen hlavní admin. Karta „Založit skupinu“ se na úvodní obrazovce objeví, až do pole jméno napíše `erik3d`. Pak zadá název skupiny a kód admina, vybere složku a v Nastavení zkopíruje pozvánku. Ostatní vidí jen „Připojit se“.
 - **Ostatní hráči:** otevřou pozvánku, zadají jméno a vyberou svou složku. Při prvním připojení musí mít pozvávající aplikaci otevřenou.
 - **Práva admina:** tlačítko Admin → zadat kód. Admin si může založit **vlastní SMP** (sloupec „Založit moje SMP“), dát mu obrázek na pozadí a nahrávat do něj videa. Hráči bez kódu se jen dívají.
 - **Až 3 vlastní SMP:** každý hráč se schváleným SMP si jich může založit nejvýš 3 a kdykoli je smazat (Otevřít → Upravit SMP → Smazat SMP).

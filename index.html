@@ -413,7 +413,7 @@ dialog.lookDlg{width:min(1200px,calc(100vw - 24px))}
   <h2><span class="logo-s"></span>Vítej v minecraft SMP</h2>
   <div class="tabs" role="tablist" id="setupTabs">
    <button type="button" role="tab" data-mode="join" aria-selected="true">Připojit se</button>
-   <button type="button" role="tab" data-mode="create" aria-selected="false">Založit skupinu</button>
+   <button type="button" role="tab" data-mode="create" aria-selected="false" class="hidden" id="sCreateTab">Založit skupinu</button>
   </div>
   <label class="f">Tvoje jméno<input type="text" id="sName" required maxlength="30" placeholder="např. Michal" autocomplete="nickname"></label>
   <div id="sJoin">
@@ -424,7 +424,7 @@ dialog.lookDlg{width:min(1200px,calc(100vw - 24px))}
    <label class="f">Název skupiny<input type="text" id="sGroup" maxlength="40" placeholder="minecraft SMP"></label>
    <label class="f">Kód admina<input type="password" id="sCode" minlength="4" autocomplete="new-password"></label>
    <label class="f">Kód admina znovu<input type="password" id="sCode2" autocomplete="new-password"></label>
-   <div class="hint">Skupinu zakládá jen první hráč. Když už na tomhle webu skupina je, použij „Připojit se“. Kód admina dej jen správcům, kteří budou schvalovat žádosti o vlastní SMP.</div>
+   <div class="hint">Skupinu může založit jen hlavní admin erik3d. Kód admina dej jen správcům, kteří budou schvalovat žádosti o vlastní SMP.</div>
   </div>
   <div class="box" id="sStore"></div>
   <div class="err" id="sErr" role="alert"></div>
@@ -1645,11 +1645,18 @@ function setSetupMode(m) {
   $('#sGo').textContent = m === 'join' ? 'Připojit se' : 'Založit skupinu';
 }
 document.querySelectorAll('#setupTabs button').forEach(b => b.onclick = () => setSetupMode(b.dataset.mode));
+// only the main admin (SUPER) may found a group: the tab appears when that name is typed
+const mayCreate = () => $('#sName').value.trim().toLowerCase() === SUPER;
+$('#sName').addEventListener('input', () => {
+  $('#sCreateTab').classList.toggle('hidden', !mayCreate());
+  if (!mayCreate() && setupMode === 'create') setSetupMode('join');
+});
 $('#dlgSetup').addEventListener('cancel', e => e.preventDefault());
 function showSetup() {
   $('.logo-s').innerHTML = blockSvg(34);
   const inv = parseInvite(location.hash);
   if (inv) $('#sLink').value = location.href;
+  $('#sCreateTab').classList.toggle('hidden', !mayCreate());
   setSetupMode('join'); renderSetupStore();
   $('#dlgSetup').showModal();
 }
@@ -1667,6 +1674,7 @@ $('#setupForm').onsubmit = async e => {
       await idb.set('kv', 'me', me);
       await loadUserKey(); await commitMe();
     } else {
+      if (!mayCreate()) throw new Error('Skupinu může založit jen hlavní admin erik3d. Použij „Připojit se“.');
       const code = $('#sCode').value;
       if (code.length < 4) throw new Error('Kód admina musí mít aspoň 4 znaky.');
       if (code !== $('#sCode2').value) throw new Error('Kódy se neshodují.');
