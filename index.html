@@ -267,7 +267,7 @@ dialog.lookDlg{width:min(1200px,calc(100vw - 24px))}
 .lkTh>div:last-child{padding:8px 10px;font-weight:700}
 .lkCols{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start}
 .lkTune{flex:1 1 400px;display:flex;flex-direction:column;gap:18px}
-.lkPrev{flex:1 1 440px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.lkPrev{flex:1 1 440px;display:flex;flex-direction:column;gap:10px;min-width:0;position:sticky;top:0}
 .lkF{display:flex;flex-direction:column;gap:8px}
 .lkSw{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .lkSw button{width:44px;height:44px;border-radius:12px;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--border);cursor:pointer}
@@ -294,6 +294,28 @@ dialog.lookDlg{width:min(1200px,calc(100vw - 24px))}
 .lkPage .vinfo{padding:8px 10px}.lkPage .vinfo h4{font-size:13px}
 .lkCardWrap{max-width:330px}
 .card.looked{color:var(--text)}
+.spGrid{display:flex;flex-direction:column;gap:18px}
+.spCols.spLeft{flex-direction:row-reverse}
+.lkWire{display:flex;flex-wrap:wrap;gap:10px}.lkWire.left{flex-direction:row-reverse}
+.lkZB{flex:1 1 160px;min-width:0;border:1px dashed var(--border);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.lkZB.zs{flex:0 1 38%}.lkZB.zh{flex:1 1 100%}
+.lkZB>small{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.06em}
+.lkZone{display:flex;flex-direction:column;gap:6px;min-height:46px}
+.lkZone.row{flex-direction:row;flex-wrap:wrap}
+.lkZone:empty::after{content:"Přetáhni sem";flex:1;display:grid;place-items:center;min-height:44px;border-radius:10px;color:var(--muted);font-size:13px;border:1px dashed var(--border)}
+.lkBlk{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);font-weight:600;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;text-align:left}
+.lkBlk.vid{min-height:76px;background:color-mix(in srgb,var(--accent) 16%,var(--surface2));border-color:var(--accent)}
+.lkBlk svg{flex:none;opacity:.6}
+.lkBlk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lkBlk.lkDragging{opacity:.35}
+.lkGhost{position:fixed;z-index:10;pointer-events:none;opacity:.92;box-shadow:0 10px 24px rgba(0,0,0,.35);margin:0;cursor:grabbing}
+.lkBody{display:flex;gap:10px;padding:0 14px 16px;align-items:flex-start}.lkBody.left{flex-direction:row-reverse}
+.lkMain{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:10px}.lkSide{flex:0 0 32%;display:flex;flex-direction:column;gap:10px}
+.lkPage .lkBody .videos{padding:0}
+.lkPage .lkBody.two .videos{grid-template-columns:repeat(2,1fr)}
+.lkPage[data-lay=big] .lkBody.two .videos,.lkPage[data-lay=list] .lkBody .videos{grid-template-columns:1fr}
+.lkBox{padding:10px;border-radius:12px;background:var(--surface);border:1px solid var(--border)}.lkBox b{font-size:12px;display:block}
+.lkBox i{display:block;height:6px;border-radius:3px;background:var(--surface2);margin-top:6px}.lkBox i+i{width:70%}
 #smpPage.looked .thumb,.lkPage.looked .thumb{background:var(--thumb)!important}
 </style>
 </head>
@@ -362,14 +384,14 @@ dialog.lookDlg{width:min(1200px,calc(100vw - 24px))}
   </div>
   <div class="spCols" style="margin-top:18px">
    <div class="spGrid">
-    <h2 id="chTitle"></h2><div class="muted" id="chDesc" style="margin:2px 0 14px"></div>
+    <div id="blkVideos"><h2 id="chTitle"></h2><div class="muted" id="chDesc" style="margin:2px 0 14px"></div>
     <div class="videos" id="videos"></div>
-    <div class="empty hidden" id="empty">Tady zatím nejsou žádná videa.</div>
+    <div class="empty hidden" id="empty">Tady zatím nejsou žádná videa.</div></div>
    </div>
    <aside class="spAside">
-    <div class="box2"><h2>O tomhle SMP</h2><p class="muted" id="spAbout" style="margin:0;font-size:14px;white-space:pre-line"></p></div>
-    <div class="box2"><h2>Admin</h2><div id="spAdmin"></div></div>
-    <div class="box2"><h2>Naposledy přidané</h2><div id="spRecent"></div></div>
+    <div class="box2" id="blkAbout"><h2>O tomhle SMP</h2><p class="muted" id="spAbout" style="margin:0;font-size:14px;white-space:pre-line"></p></div>
+    <div class="box2" id="blkAdmin"><h2>Admin</h2><div id="spAdmin"></div></div>
+    <div class="box2" id="blkRecent"><h2>Naposledy přidané</h2><div id="spRecent"></div></div>
    </aside>
   </div>
   <section class="chatPane chat hidden" id="chatPane" aria-label="Chat SMP">
@@ -468,6 +490,11 @@ dialog.lookDlg{width:min(1200px,calc(100vw - 24px))}
     <div class="lkF"><b>Rozložení videí</b><div class="lkSeg" id="lkLay" role="group" aria-label="Rozložení videí"></div></div>
     <div class="lkF"><b>Obrázek v hlavičce</b><div class="row"><div class="lkImg" id="lkImg"></div><label class="btn sec small" style="cursor:pointer">Změnit obrázek<input type="file" id="lkBg" accept="image/*" class="hidden"></label><button type="button" class="btn ghost small" id="lkBgDel">Bez obrázku</button></div></div>
     <div class="lkF"><b>Efekt v hlavičce</b><div class="lkSeg" id="lkFx" role="group" aria-label="Efekt v hlavičce"></div></div>
+    <h3 class="lkStep" style="margin-top:6px"><i>3</i>Rozložení stránky</h3>
+    <div class="hint" style="margin-top:-8px">Bloky přetáhni myší nebo prstem. Na klávesnici: šipky nahoru a dolů mění pořadí, doleva a doprava přesouvají blok jinam.</div>
+    <div class="lkF"><b>Boční panel</b><div class="lkSeg" id="lkSp" role="group" aria-label="Boční panel"></div></div>
+    <div class="lkWire" id="lkWire"></div>
+    <div class="lkF"><b>Pořadí sekcí</b><div class="lkZone row" id="lkSecs" data-zone="secs" data-grp="secs" aria-label="Pořadí sekcí"></div></div>
     <div class="err" id="lkErr" role="alert"></div>
    </section>
    <section class="lkPrev">
@@ -1241,6 +1268,7 @@ function renderChannel() {
   $('#chatPane').classList.toggle('hidden', !inChat);
   // banner
   const look = applyLook($('#smpPage'), x.look, x.bg);
+  applyUi(look ? look.ui : cleanUi(null));
   const bn = $('#spBanner'); bn.classList.toggle('img', okImg(x.bg));
   bn.style.backgroundImage = okImg(x.bg) ? `url("${x.bg}")` : 'none';
   bn.querySelector('.wmk')?.remove();
@@ -1980,7 +2008,71 @@ const LK_FONTS = { outfit: ['Moderní', 'var(--font)'], pixel: ['Pixelify', '"Pi
 const LK_LAY = { tiles: 'Dlaždice', big: 'Velké', list: 'Seznam' };
 const LK_FX = { none: 'Žádný', snow: 'Sníh', leaves: 'Listí', embers: 'Uhlíky', particles: 'Částice', bubbles: 'Bubliny' };
 const HEX6 = /^#[0-9a-f]{6}$/i;
-const okLook = l => l == null || (typeof l === 'object' && !Array.isArray(l) && JSON.stringify(l).length < 400);
+// page blocks: main part (m), side panel (s), hidden (h); side panel right (r) or left (l). Videos can't be hidden.
+const LK_BLK = { videos: 'Videa a sekce', about: 'O tomhle SMP', admin: 'Admin', recent: 'Naposledy přidané' };
+function cleanUi(u) {
+  const o = { m: [], s: [], h: [], sp: 'r' }, seen = new Set();
+  if (u && typeof u === 'object') {
+    for (const z of ['m', 's', 'h']) if (Array.isArray(u[z])) for (const b of u[z]) if (typeof b === 'string' && Object.hasOwn(LK_BLK, b) && !seen.has(b) && !(z === 'h' && b === 'videos')) { seen.add(b); o[z].push(b); }
+    if (u.sp === 'l') o.sp = 'l';
+  }
+  if (!seen.has('videos')) o.m.unshift('videos');
+  for (const b of ['about', 'admin', 'recent']) if (!seen.has(b)) o.s.push(b);
+  return o;
+}
+function applyUi(ui) {
+  const main = $('.spGrid'), side = $('.spAside'), blk = { videos: $('#blkVideos'), about: $('#blkAbout'), admin: $('#blkAdmin'), recent: $('#blkRecent') };
+  ui.m.forEach(b => main.append(blk[b])); ui.s.forEach(b => side.append(blk[b])); ui.h.forEach(b => side.append(blk[b]));
+  for (const b in blk) blk[b].classList.toggle('hidden', ui.h.includes(b));
+  side.classList.toggle('hidden', !ui.s.length);
+  $('.spCols').classList.toggle('spLeft', ui.sp === 'l');
+}
+// drag & drop with mouse, finger or pen (pointer events); items [data-drag] move inside zones [data-zone] of the same data-grp
+function makeDrag(root, done) {
+  root.querySelectorAll('[data-drag]').forEach(it => {
+    it.onpointerdown = e => {
+      if (e.button) return;
+      e.preventDefault();
+      const grp = it.dataset.drag, r = it.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top, x0 = e.clientX, y0 = e.clientY;
+      let ghost = null;
+      const move = ev => {
+        if (!ghost) {
+          if (Math.hypot(ev.clientX - x0, ev.clientY - y0) < 5) return;
+          ghost = it.cloneNode(true); ghost.classList.add('lkGhost'); ghost.style.width = r.width + 'px';
+          it.closest('dialog').append(ghost); it.classList.add('lkDragging');
+        }
+        ghost.style.left = (ev.clientX - dx) + 'px'; ghost.style.top = (ev.clientY - dy) + 'px';
+        const zone = document.elementFromPoint(ev.clientX, ev.clientY)?.closest(`[data-zone][data-grp="${grp}"]`); if (!zone || (zone.dataset.ok && !zone.dataset.ok.split(',').includes(it.dataset.b))) return;
+        const row = zone.classList.contains('row');
+        const before = [...zone.querySelectorAll(':scope>[data-drag]')].filter(s => s !== it).find(s => {
+          const q = s.getBoundingClientRect();
+          return row ? ev.clientY < q.top || (ev.clientY < q.bottom && ev.clientX < q.left + q.width / 2) : ev.clientY < q.top + q.height / 2;
+        });
+        if (zone !== it.parentNode || it.nextElementSibling !== (before || null)) zone.insertBefore(it, before || null);
+      };
+      // listen on the window: moving the item in the page would drop a pointer capture
+      const up = () => {
+        removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
+        if (ghost) { ghost.remove(); it.classList.remove('lkDragging'); done(it); }
+      };
+      addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', up);
+    };
+    it.onkeydown = e => {                                       // keyboard: up/down = order, left/right = other zone
+      const zone = it.parentNode, zones = [...root.querySelectorAll(`[data-zone][data-grp="${it.dataset.drag}"]`)];
+      const row = zone.classList.contains('row') && zones.length === 1;
+      const k = e.key, prev = k === 'ArrowUp' || (row && k === 'ArrowLeft'), next = k === 'ArrowDown' || (row && k === 'ArrowRight');
+      if (prev && it.previousElementSibling) zone.insertBefore(it, it.previousElementSibling);
+      else if (next && it.nextElementSibling) zone.insertBefore(it.nextElementSibling, it);
+      else if (!row && (k === 'ArrowLeft' || k === 'ArrowRight')) {
+        const z = zones[zones.indexOf(zone) + (k === 'ArrowRight' ? 1 : -1)];
+        if (!z || !z.dataset.ok?.split(',').includes(it.dataset.b) && z.dataset.ok) return;
+        z.append(it);
+      } else return;
+      e.preventDefault(); done(it, true);
+    };
+  });
+}
+const okLook = l => l == null || (typeof l === 'object' && !Array.isArray(l) && JSON.stringify(l).length < 800);
 // the stored record -> a full, checked set of values (or null = the app's own look)
 function cleanLook(l) {
   if (!l || typeof l !== 'object') return null;
@@ -1992,7 +2084,8 @@ function cleanLook(l) {
     bgm: pick(l.bgm, LK_BGM, p.bgm || (mode === 'light' ? 'light' : 'dark')),
     font: pick(l.font, LK_FONTS, p.font || 'outfit'),
     lay: pick(l.lay, LK_LAY, 'tiles'),
-    fx: pick(l.fx, LK_FX, p.fx || 'none')
+    fx: pick(l.fx, LK_FX, p.fx || 'none'),
+    ui: cleanUi(l.ui)
   };
 }
 function lum(hex) {
@@ -2050,15 +2143,16 @@ function lookBanner(bn, L) {
 }
 
 /* ---- editor ---- */
-let lkId = null, lkDraft = {}, lkBgDraft = null;
+let lkId = null, lkDraft = {}, lkBgDraft = null, lkSecs = [];
 const lkSmp = () => ({ ...cat.smps[lkId], look: lkDraft, bg: lkBgDraft });
 function openLook(id) {
   const x = cat.smps[id];
   if (!x || x.deleted || x.owner !== me.uid) return;
   lkId = id; lkBgDraft = x.bg || null;
   lkDraft = {}; const L = cleanLook(x.look);
-  if (L) for (const k of ['t', 'acc', 'bgm', 'font', 'lay', 'fx']) if (x.look[k] != null && (k === 't' || L[k] != null)) lkDraft[k] = L[k];
+  if (L) for (const k of ['t', 'acc', 'bgm', 'font', 'lay', 'fx', 'ui']) if (x.look[k] != null && (k === 't' || L[k] != null)) lkDraft[k] = L[k];
   if (!lkDraft.t) lkDraft.t = 'vychozi';
+  lkSecs = secsOf(id).map(s => s.id);
   $('#lkFor').textContent = `${x.name} · změny uvidí všichni hráči`; $('#lkErr').textContent = '';
   renderLook(); $('#dlgLook').showModal();
 }
@@ -2078,7 +2172,7 @@ function renderLook() {
     const mini = el('div', { class: 'lkMini', style: `background:${P.bg}` },
       el('b', { style: `background:${P.surface2};color:${P.accent};font-family:${LK_FONTS[p.font || 'outfit'][1]}`, text: n }),
       el('span', {}, el('i', { style: `background:${P.surface}` }), el('i', { style: `background:${P.surface}` }), el('i', { style: `background:${P.accent}` })));
-    th.append(pressed(el('button', { type: 'button', class: 'lkTh', onclick: () => { lkDraft = { t: k, ...(lkDraft.lay ? { lay: lkDraft.lay } : {}) }; renderLook(); } }, mini, el('div', { text: n })), L.t === k));
+    th.append(pressed(el('button', { type: 'button', class: 'lkTh', onclick: () => { lkDraft = { t: k, ...(lkDraft.lay ? { lay: lkDraft.lay } : {}), ...(lkDraft.ui ? { ui: lkDraft.ui } : {}) }; renderLook(); } }, mini, el('div', { text: n })), L.t === k));
   }
   // 2. details
   const acc = $('#lkAcc'); acc.textContent = '';
@@ -2096,14 +2190,33 @@ function renderLook() {
   seg('#lkLay', LK_LAY, 'lay', L.lay);
   seg('#lkFx', LK_FX, 'fx', L.fx);
   $('#lkImg').style.backgroundImage = okImg(lkBgDraft) ? `url("${lkBgDraft}")` : 'none';
-  // 3. preview
+  // 3. page layout (drag & drop)
+  const ui = L.ui, sp = $('#lkSp'); sp.textContent = '';
+  for (const [k, n] of [['l', 'Vlevo'], ['r', 'Vpravo']]) sp.append(pressed(el('button', { type: 'button', text: n, onclick: () => { lkDraft.ui = { ...ui, sp: k }; renderLook(); } }), ui.sp === k));
+  const grip = '<svg aria-hidden="true" width="10" height="16" viewBox="0 0 10 16" fill="currentColor"><circle cx="2" cy="2" r="1.5"/><circle cx="8" cy="2" r="1.5"/><circle cx="2" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="2" cy="14" r="1.5"/><circle cx="8" cy="14" r="1.5"/></svg>';
+  const blk = b => el('button', { type: 'button', class: 'lkBlk' + (b === 'videos' ? ' vid' : ''), 'data-drag': 'blk', 'data-b': b, html: grip }, LK_BLK[b]);
+  const zone = (z, label, cls) => el('div', { class: 'lkZB ' + cls }, el('small', { text: label }),
+    el('div', { class: 'lkZone' + (z === 'h' ? ' row' : ''), 'data-zone': z, 'data-grp': 'blk', ...(z === 'h' ? { 'data-ok': 'about,admin,recent' } : {}) }, ...ui[z].map(blk)));
+  const wire = $('#lkWire'); wire.textContent = ''; wire.classList.toggle('left', ui.sp === 'l');
+  wire.append(zone('m', 'HLAVNÍ ČÁST', 'zm'), zone('s', 'BOČNÍ PANEL', 'zs'), zone('h', 'SKRYTÉ', 'zh'));
+  const secBox = $('#lkSecs'); secBox.textContent = '';
+  lkSecs.forEach(id => cat.sections[id] && secBox.append(el('button', { type: 'button', class: 'lkBlk', 'data-drag': 'secs', 'data-b': id, html: grip }, cat.sections[id].name)));
+  if (!lkSecs.length) secBox.append(el('span', { class: 'hint', text: 'Zatím tu nejsou žádné sekce.' }));
+  const lkDone = (it, kb) => {
+    if (it.dataset.drag === 'secs') lkSecs = [...secBox.querySelectorAll('[data-drag]')].map(e => e.dataset.b);
+    else { const rd = z => [...wire.querySelectorAll(`[data-zone="${z}"]>[data-drag]`)].map(e => e.dataset.b); lkDraft.ui = { m: rd('m'), s: rd('s'), h: rd('h').filter(b => b !== 'videos'), sp: ui.sp }; }
+    const b = it.dataset.b; renderLook();
+    if (kb) document.querySelector(`#dlgLook [data-b="${b}"]`)?.focus();
+  };
+  makeDrag(wire, lkDone); makeDrag(secBox, lkDone);
+  // 4. preview
   const x = lkSmp(), pg = $('#lkPage'); pg.textContent = '';
   applyLook(pg, x.look, x.bg);
   const bn = el('div', { class: 'lkBn' + (okImg(x.bg) ? ' img' : '') });
   if (okImg(x.bg)) bn.style.backgroundImage = `url("${x.bg}")`;
   bn.append(el('div', {}, el('h1', { class: 'lkTitle', text: x.name }), el('div', { style: 'font-size:13px;opacity:.9', text: `Admin: ${nameOf(x.owner)}${x.desc ? ' · ' + x.desc : ''}` })));
   lookBanner(bn, L);
-  const chips = el('div', { class: 'chips' }, pressed(el('button', { type: 'button', text: 'Vše' }), true), ...secsOf(lkId).slice(0, 3).map(s => pressed(el('button', { type: 'button', text: s.name }), false)), el('button', { type: 'button', class: 'chatTab', text: 'Chat' }));
+  const chips = el('div', { class: 'chips' }, pressed(el('button', { type: 'button', text: 'Vše' }), true), ...lkSecs.slice(0, 3).filter(id => cat.sections[id]).map(id => pressed(el('button', { type: 'button', text: cat.sections[id].name }), false)), el('button', { type: 'button', class: 'chatTab', text: 'Chat' }));
   const vids = vidsOf(lkId).slice(0, L.lay === 'list' ? 3 : L.lay === 'big' ? 2 : 3);
   const grid = el('div', { class: 'videos' });
   (vids.length ? vids : [{ title: 'Ukázkové video' }, { title: 'Další díl' }, { title: 'Nejlepší momenty' }].slice(0, L.lay === 'big' ? 2 : 3)).forEach((v, i) => {
@@ -2112,7 +2225,10 @@ function renderLook() {
     t.append(el('span', { class: 'play', html: icon('play', 16), style: 'width:34px;height:34px;color:var(--onaccent)' }));
     grid.append(el('div', { class: 'vcard' }, t, el('div', { class: 'vinfo' }, el('h4', { text: v.title }), el('div', { class: 'vmeta' }, el('span', { class: 'secbadge', style: 'margin:0', text: v.section ? secName(v) : 'Epizody' })))));
   });
-  pg.append(bn, chips, grid);
+  const box = b => el('div', { class: 'lkBox' }, el('b', { text: LK_BLK[b] }), el('i'), el('i'));
+  const part = (cls, list) => el('div', { class: cls }, ...list.map(b => b === 'videos' ? grid : box(b)));
+  const body = el('div', { class: 'lkBody' + (ui.sp === 'l' ? ' left' : '') + (ui.s.length ? ' two' : '') }, part('lkMain', ui.m), ui.s.length ? part('lkSide', ui.s) : null);
+  pg.append(bn, chips, body);
   const cw = $('#lkCard'); cw.textContent = ''; cw.append(smpCard(x, 0));
 }
 $('#lkBg').onchange = async e => {
@@ -2125,11 +2241,14 @@ $('#lkReset').onclick = () => { lkDraft = { t: 'vychozi' }; renderLook(); };
 $('#lkSave').onclick = async () => {
   const x = cat.smps[lkId]; if (!x || x.owner !== me.uid) return;
   const look = {}; for (const [k, v] of Object.entries(lkDraft)) if (v != null) look[k] = v;
+  if (look.ui && canon(cleanUi(look.ui)) === canon(cleanUi(null))) delete look.ui;
   const empty = look.t === 'vychozi' && Object.keys(look).length === 1;
   const rec = { ...x, bg: lkBgDraft }; if (empty) delete rec.look; else rec.look = look;
   if (!okLook(rec.look)) return $('#lkErr').textContent = 'Vzhled nejde uložit.';
   $('#lkSave').disabled = true;
-  try { await commit('smps', rec); $('#dlgLook').close(); toast('Vzhled uložen. Ostatní ho uvidí, jakmile budou online.'); }
+  try {
+    for (const [i, id] of lkSecs.entries()) { const sc = cat.sections[id]; if (sc && !sc.deleted && sc.smp === lkId && secOwner(sc) === me.uid && sc.order !== i) await commit('sections', { ...sc, order: i }); }
+    await commit('smps', rec); $('#dlgLook').close(); toast('Vzhled uložen. Ostatní ho uvidí, jakmile budou online.'); }
   catch (ex) { $('#lkErr').textContent = ex.message; }
   finally { $('#lkSave').disabled = false; }
 };
