@@ -447,6 +447,14 @@ dialog.lookDlg{width:min(1200px,calc(100vw - 24px))}
   <div id="aIn" class="hidden" style="display:flex;flex-direction:column;gap:14px">
    <div class="box">Máš práva admina: schvaluješ žádosti o nová SMP, mažeš hráče (koš v seznamu hráčů) a zakládáš SMP bez žádosti.</div>
    <div id="aReq"></div>
+   <div class="box" style="display:flex;flex-direction:column;gap:10px">
+    <b>Zveřejnit skupinu na GitHubu</b>
+    <div class="hint">Aby noví hráči viděli SMP a ostatní hráče, i když nikdo není online, uloží se seznam do souboru <code>skupina.json</code> na GitHubu. Obsahuje skupinu, hráče, SMP, sekce, seznam videí a jejich náhledy. Chat, žádosti, videa samotná a kód admina v něm nejsou. Soubor je veřejný.</div>
+    <label class="f">GitHub token (stačí jednou na tomhle počítači)<input type="password" id="aTok" autocomplete="off" placeholder="github_pat_…"></label>
+    <div class="hint">Token vytvoříš na <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com → Settings → Fine-grained tokens</a>: Repository access „Only select repositories“ → <span id="aRepo">onion-smp</span>, Permissions → Contents „Read and write“. S tokenem se seznam zveřejní sám, nejvýš jednou za 10 minut po změně.</div>
+    <div class="row"><button type="button" class="btn small" id="aPub">Zveřejnit teď</button><button type="button" class="btn sec small" id="aSnapDl">Stáhnout skupina.json</button><button type="button" class="btn ghost small hidden" id="aTokDel">Smazat token</button></div>
+    <div class="hint" id="aPubSt"></div>
+   </div>
    <label class="f">Nový kód admina (nepovinné)<input type="password" id="aNew" autocomplete="new-password"></label>
    <label class="f">Nový kód znovu<input type="password" id="aNew2" autocomplete="new-password"></label>
    <div class="hint">Admini, kteří už jsou přihlášení, práva neztratí. Nový kód platí pro další přihlášení.</div>
@@ -907,7 +915,7 @@ const myReqs = () => smpReqs().filter(r => r.by === me.uid && !(reqState(r) === 
 
 let saveTimer = null;
 function save() {
-  clearTimeout(saveTimer);
+  clearTimeout(saveTimer); schedulePublish();
   saveTimer = setTimeout(async () => {
     await idb.set('kv', 'cat', cat);
     store.saveCatalog(JSON.stringify({ app: APP, v: 1, profile: me, catalog: cat }, null, 1));
@@ -1757,7 +1765,7 @@ function openAdmin() {
   $('#aLogin').classList.toggle('hidden', isAdmin); $('#aIn').classList.toggle('hidden', !isAdmin);
   $('#aLogout').classList.toggle('hidden', !isAdmin);
   $('#aGo').textContent = isAdmin ? 'Uložit nový kód' : 'Přihlásit';
-  renderRequests();
+  renderRequests(); renderPubState();
   $('#dlgAdmin').open || $('#dlgAdmin').showModal();
 }
 function renderRequests() {
@@ -1822,6 +1830,7 @@ $('#adminForm').onsubmit = async e => {
   try {
     if (!isAdmin) {
       let priv;
+      if (!cat.group.keyEnc) throw new Error('Kód admina půjde zadat, až se spojíš s ostatními hráči (aspoň jeden musí být online).');
       try { priv = await unwrapPriv(cat.group.keyEnc, $('#aCode').value); } catch { throw new Error('Špatný kód.'); }
       await setSignKey(priv); isAdmin = true; await idb.set('kv', 'adminKey', priv);
       await commitMe();
@@ -2359,7 +2368,93 @@ $('#lkSave').onclick = async () => {
 };
 $('#chLook').innerHTML = icon('edit', 16) + 'Vzhled SMP'; $('#chLook').onclick = () => openLook(activeSmp);
 
-function start() { routeFromHash(); render(); startNet(); setInterval(() => { if (!cat.group) renderBanners(); }, 2000); }
+/* ================= Public snapshot on GitHub (skupina.json) =================
+   A copy of the catalog next to index.html, so a new player sees the group, players and SMPs
+   even when nobody is online. Every record keeps its own signature and is checked as usual.
+   The group record is signed again without the wrapped admin key (keyEnc), one ms older than
+   the real one, so the full record from any player replaces it. Chat and requests stay out. */
+const SNAP_FILE = 'skupina.json';
+const ghRepo = () => { const h = location.hostname, r = location.pathname.split('/').filter(Boolean)[0]; return h.endsWith('.github.io') && r ? `${h.split('.')[0]}/${r}` : null; };
+async function snapshot() {
+  if (!signKey || !cat.group) throw new Error('Tohle může jen přihlášený admin.');
+  const { keyEnc, sig, ...g } = cat.group;
+  const group = await sign({ ...g, ts: cat.group.ts - 1 });
+  const users = Object.fromEntries(Object.entries(cat.users).filter(([, u]) => !u.gone));
+  return { app: APP, v: 1, gid: group.id, cat: { group, users, removed: cat.removed, grants: cat.grants, smps: cat.smps, sections: cat.sections, videos: cat.videos, holders: cat.holders } };
+}
+async function loadSnapshot() {
+  try {
+    const r = await fetch(`${SNAP_FILE}?t=${Date.now()}`, { cache: 'no-store' });
+    if (!r.ok) return;
+    const snap = await r.json();
+    if (!snap || snap.app !== APP || typeof snap.gid !== 'string' || !snap.cat?.group || snap.cat.group.id !== snap.gid) return;
+    if (me.gid && me.gid !== snap.gid) return;                // I belong to another group
+    if (await mergeCat(snap.cat)) { save(); render(); }
+  } catch { /* no file yet, or offline */ }
+}
+const b64text = t => new Promise((ok, bad) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(',')[1]); fr.onerror = bad; fr.readAsDataURL(new Blob([t])); });
+async function sha256(t) { return b64(await crypto.subtle.digest('SHA-256', enc.encode(t))); }
+let pubTimer = null, pubBusy = false;
+function schedulePublish() {
+  if (!isAdmin || !ghRepo()) return;
+  clearTimeout(pubTimer);
+  pubTimer = setTimeout(async () => {
+    if (!(await idb.get('kv', 'ghToken'))) return;
+    const last = (await idb.get('kv', 'ghLast')) || 0, wait = last + 600000 - Date.now();
+    if (wait > 0) return schedulePublish.later(wait);
+    publishSnapshot().catch(ex => { console.warn(ex); idb.set('kv', 'ghErr', ex.message); });
+  }, 120000);                                                // 2 min after the last change
+}
+schedulePublish.later = ms => { clearTimeout(pubTimer); pubTimer = setTimeout(() => { pubTimer = null; schedulePublish(); }, ms); };
+async function publishSnapshot(force) {
+  const token = await idb.get('kv', 'ghToken'), repo = ghRepo();
+  if (!repo) throw new Error('Zveřejnit jde jen z adresy na github.io.');
+  if (!token) throw new Error('Nejdřív vlož GitHub token.');
+  if (pubBusy) return;
+  pubBusy = true;
+  try {
+    const text = JSON.stringify(await snapshot());
+    const hash = await sha256(canon({ ...JSON.parse(text).cat, group: cat.group.ts }));   // the group signature differs every time
+    if (!force && hash === await idb.get('kv', 'ghHash')) return;   // nothing new
+    const url = `https://api.github.com/repos/${repo}/contents/${SNAP_FILE}`;
+    const h = { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' };
+    const put = async () => {
+      const cur = await fetch(url, { headers: h, cache: 'no-store' });
+      if (cur.status === 401 || cur.status === 403) throw new Error('GitHub token nefunguje nebo nemá právo zapisovat do repozitáře.');
+      const sha = cur.ok ? (await cur.json()).sha : undefined;
+      return fetch(url, { method: 'PUT', headers: h, body: JSON.stringify({ message: 'Aktualizace skupiny (hráči, SMP, seznam videí)', content: await b64text(text), ...(sha ? { sha } : {}) }) });
+    };
+    let res = await put();
+    if (res.status === 409 || res.status === 422) res = await put();
+    if (!res.ok) throw new Error(res.status === 401 || res.status === 403 ? 'GitHub token nefunguje nebo nemá právo zapisovat do repozitáře.' : `GitHub uložení odmítl (chyba ${res.status}).`);
+    await idb.set('kv', 'ghLast', Date.now()); await idb.set('kv', 'ghHash', hash); await idb.set('kv', 'ghErr', '');
+  } finally { pubBusy = false; renderPubState(); }
+}
+async function renderPubState() {
+  if (!$('#dlgAdmin').open && !isAdmin) return;
+  const tok = await idb.get('kv', 'ghToken'), last = await idb.get('kv', 'ghLast'), errM = await idb.get('kv', 'ghErr');
+  $('#aRepo').textContent = ghRepo() || 'onion-smp';
+  $('#aTok').placeholder = tok ? 'token je uložený' : 'github_pat_…';
+  $('#aTokDel').classList.toggle('hidden', !tok);
+  $('#aPubSt').textContent = (last ? `Naposledy zveřejněno: ${fmtTime(last)}. Na webu se změna objeví za 1–2 minuty.` : 'Zatím nezveřejněno.') + (errM ? ` Poslední pokus selhal: ${errM}` : '');
+}
+$('#aPub').onclick = async () => {
+  const t = $('#aTok').value.trim(); if (t) { await idb.set('kv', 'ghToken', t); $('#aTok').value = ''; }
+  $('#aPub').disabled = true; $('#aPubSt').textContent = 'Zveřejňuji…';
+  try { await publishSnapshot(true); toast('Skupina zveřejněna na GitHubu.'); }
+  catch (ex) { await idb.set('kv', 'ghErr', ex.message); $('#aErr').textContent = ex.message; renderPubState(); }
+  finally { $('#aPub').disabled = false; }
+};
+$('#aTokDel').onclick = async () => { await idb.del('kv', 'ghToken'); renderPubState(); toast('Token smazán z tohoto počítače.'); };
+$('#aSnapDl').onclick = async () => {
+  try {
+    const a = el('a', { href: URL.createObjectURL(new Blob([JSON.stringify(await snapshot())], { type: 'application/json' })), download: SNAP_FILE });
+    document.body.append(a); a.click(); a.remove();
+    toast('Soubor skupina.json nahraj na GitHub vedle index.html (Add file → Upload files).', 7000);
+  } catch (ex) { $('#aErr').textContent = ex.message; }
+};
+
+function start() { routeFromHash(); render(); startNet(); loadSnapshot(); setInterval(() => { if (!cat.group) renderBanners(); }, 2000); }
 
 (async function boot() {
   await store.init();
