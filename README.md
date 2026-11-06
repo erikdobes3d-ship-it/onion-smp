@@ -25,6 +25,7 @@ Aplikace musí běžet přes https (GitHub Pages to splňuje). Z disku přes `fi
 - **Rozložení stránky SMP přetažením:** v editoru vzhledu (krok 3) jde myší nebo prstem přetáhnout bloky stránky (Videa a sekce, O tomhle SMP, Admin, Naposledy přidané) mezi Hlavní část, Boční panel a Skryté. Boční panel jde dát vlevo nebo vpravo a přetažením se mění i pořadí sekcí (záložek). Videa skrýt nejdou. Na klávesnici: šipky nahoru a dolů mění pořadí, doleva a doprava přesouvají blok jinam.
 - **Postavička super admina:** erik3d si v Nastavení načte skin (PNG 64 × 64 px jako v Minecraftu). Postavička stojí ve 3D vlevo nahoře vedle názvu „minecraft SMP“ a jemně se pohupuje (skin erik3d je vestavěný jako výchozí) a když kdokoli stahuje nebo nahrává video, běží po liště načítání.
 - **Offline režim:** SMP hráče, který není přihlášený, vidí všichni dál. Přehrát z něj jdou videa, která má hráč uložená u sebe (💾 uloženo u tebe), nebo která má uložená někdo, kdo je online. Ve sloupci je vidět „offline · X z Y jde přehrát“ a v SMP je filtr „Jen co jde přehrát“.
+- **Stahování před přehráním:** když se video stahuje od jiného hráče, přes přehrávač se ukáže velký nápis „Video se nejdřív musí stáhnout“ s procenty a od koho se stahuje. Po stažení se video spustí samo.
 - **Každé SMP je jedna karta** na hlavní stránce. Kliknutím na obrázek nebo „Otevřít“ se SMP otevře na celou stránku. Pod kartami jsou Naposledy přidaná videa ze všech SMP a Hráči.
 
 ## Jak to funguje

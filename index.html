@@ -227,6 +227,11 @@ canvas.skinanim{image-rendering:pixelated;flex:none}
 .mini .sv{color:var(--ok)}
 .pill[aria-pressed=true]{background:var(--accent);color:var(--onaccent);border-color:var(--accent);font-weight:700}
 video.pl{width:100%;max-height:65vh;background:#000;border-radius:12px}
+.plwrap{position:relative}.plwrap.wait video.pl{aspect-ratio:16/9}
+.plwait{position:absolute;inset:0;display:grid;place-items:center;padding:20px;border-radius:12px;background:rgba(0,0,0,.78);color:#fff;text-align:center}
+.plwait>div{display:flex;flex-direction:column;align-items:center;gap:8px;max-width:420px}
+.plwait b{font-size:20px}.plwait span{font-size:15px;opacity:.9}.plwait small{font-size:13px;opacity:.75}
+.plpct{font-size:44px;font-weight:800;line-height:1;color:var(--accent)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:50;padding:12px 18px;border-radius:12px;background:var(--text);color:var(--bg);font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.4);display:none;max-width:calc(100vw - 32px)}
 .toast.show{display:block}
 .hidden{display:none!important}
@@ -552,7 +557,14 @@ dialog.lookDlg{width:min(1200px,calc(100vw - 24px))}
 <dialog id="dlgPlayer" class="wide">
  <div class="dlg">
   <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><h2 id="plTitle" style="word-break:break-word"></h2><button type="button" class="btn sec" id="plClose">Zavřít</button></div>
-  <video class="pl" id="plVideo" controls playsinline></video>
+  <div class="plwrap" id="plWrap"><video class="pl" id="plVideo" controls playsinline></video>
+   <div class="plwait hidden" id="plWait" role="status" aria-live="polite"><div>
+    <div class="plpct" id="plPct"></div>
+    <b>Video se nejdřív musí stáhnout</b>
+    <span>Přehrát půjde, až bude stažené celé. Pak se spustí samo, nech okno otevřené.</span>
+    <small id="plWaitMsg"></small>
+   </div></div>
+  </div>
   <div id="plStatus" class="hint"></div>
   <div class="barw hidden" id="plBar"><canvas class="runner" width="16" height="32"></canvas><div class="bar"><div></div></div></div>
   <p id="plDesc" class="muted" style="margin:0;white-space:pre-line"></p>
@@ -1582,9 +1594,14 @@ async function saveSkin(skin) {
 
 /* ================= Player ================= */
 let plUrl = null;
+// while a video is being downloaded (frac is a number) a notice covers the empty player
 function plStatus(msg, frac) {
   $('#plStatus').textContent = msg;
   setBar('#plBar', frac);
+  const wait = typeof frac === 'number';
+  $('#plWait').classList.toggle('hidden', !wait); $('#plWrap').classList.toggle('wait', wait);
+  $('#plPct').textContent = wait && frac > 0 ? `${Math.floor(frac * 100)} %` : '';
+  $('#plWaitMsg').textContent = wait ? msg : '';
 }
 function playBlob(blob, msg) {
   if (plUrl) URL.revokeObjectURL(plUrl);
