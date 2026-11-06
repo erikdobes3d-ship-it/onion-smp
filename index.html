@@ -437,10 +437,10 @@ dialog.lookDlg{width:min(1200px,calc(100vw - 24px))}
   <h2>Admin</h2>
   <div id="aLogin">
    <label class="f">Kód admina<input type="password" id="aCode" autocomplete="current-password"></label>
-   <div class="hint" style="margin-top:6px">Kód admina mají jen správci skupiny, kteří schvalují žádosti o vlastní SMP. Pro vlastní SMP stačí ve sloupcích kliknout na „Požádat o vlastní SMP“.</div>
+   <div class="hint" style="margin-top:6px">Kód admina mají jen správci skupiny, kteří schvalují žádosti o vlastní SMP. Pro vlastní SMP stačí na hlavní stránce kliknout na „Požádat o vlastní SMP“.</div>
   </div>
   <div id="aIn" class="hidden" style="display:flex;flex-direction:column;gap:14px">
-   <div class="box">Máš práva admina: schvaluješ žádosti o vlastní SMP a můžeš mít vlastní SMP.</div>
+   <div class="box">Máš práva admina: schvaluješ žádosti o nová SMP, mažeš hráče (koš v seznamu hráčů) a zakládáš SMP bez žádosti.</div>
    <div id="aReq"></div>
    <label class="f">Nový kód admina (nepovinné)<input type="password" id="aNew" autocomplete="new-password"></label>
    <label class="f">Nový kód znovu<input type="password" id="aNew2" autocomplete="new-password"></label>
@@ -465,6 +465,7 @@ dialog.lookDlg{width:min(1200px,calc(100vw - 24px))}
    <div class="row"><label class="btn sec small" style="cursor:pointer">Vybrat obrázek<input type="file" id="smpBg" accept="image/*" class="hidden"></label><button type="button" class="btn ghost small" id="smpBgDel">Bez obrázku</button></div>
    <span class="hint">Obrázek se uloží v rozlišení až 1920 × 768 px. Ideální je široký snímek ze hry (Full HD a víc).</span>
   </div>
+  <div class="box hidden" id="smpReqHint">Žádost uvidí admini. Až ji některý schválí, SMP se ti samo založí.</div>
   <div class="err" id="smpErr" role="alert"></div>
   <div class="row" style="justify-content:space-between">
    <button type="button" class="btn danger hidden" id="smpDel">Smazat SMP</button>
@@ -815,8 +816,12 @@ async function mergeCat(inc) {
     if (await verify(e)) { cat.removed[id] = e; changed = true; }
   }
   for (const [id, e] of Object.entries(inc.requests || {})) {
-    if (!e || e.id !== id || e.by !== id || !newer(e, cat.requests[id])) continue;
-    if (await verify(e, await userVerifyKey(id))) { cat.requests[id] = e; changed = true; }
+    // a request for one new SMP: { id, by, smp, name, desc, bg? } signed by the player (older: id === by, one request per player)
+    if (!e || e.id !== id || !e.by || !newer(e, cat.requests[id])) continue;
+    if (cat.requests[id] && cat.requests[id].by !== e.by) continue;
+    if (e.id !== e.by && !(typeof e.smp === 'string' && typeof e.name === 'string' && e.name.length <= 60 && (e.desc == null || (typeof e.desc === 'string' && e.desc.length <= 120)))) continue;
+    if (e.bg != null && !(typeof e.bg === 'string' && e.bg.startsWith('data:image/jpeg;base64,') && e.bg.length < BG_MAX)) continue;
+    if (await verify(e, await userVerifyKey(e.by))) { cat.requests[id] = e; changed = true; }
   }
   for (const [id, e] of Object.entries(inc.grants || {})) {
     if (!e || e.id !== id || !newer(e, cat.grants[id])) continue;
@@ -830,7 +835,7 @@ async function mergeCat(inc) {
     if (e.bg != null && !(typeof e.bg === 'string' && e.bg.startsWith('data:image/jpeg;base64,') && e.bg.length < BG_MAX)) continue;
     if (!okLook(e.look)) continue;
     if (e.by === e.owner) {
-      if (!e.deleted && !canOwnSmp(e.owner)) continue;
+      if (!e.deleted && !smpAllowed(e)) continue;
       if (!e.deleted && (!cat.smps[id] || cat.smps[id].deleted) && smpsOf(e.owner).length >= MAX_SMP) continue;
       if (!(await verify(e, await userVerifyKey(e.owner)))) continue;
     } else if (!(await bySuper(e))) continue;
@@ -864,7 +869,9 @@ const userIsAdmin = u => !!(u && (u.adm || (u.admin && u.sig && !u.pub)));
 const smpsOf = uid => Object.values(cat.smps).filter(x => x.owner === uid && !x.deleted);
 const secOwner = s => s.owner || s.smp;   // older sections: SMP id = owner id
 // a player is hidden when he deleted his profile, or an admin removed him (and he has not been active since)
-const activeUser = u => !!u && !u.gone && !(cat.removed?.[u.id] && cat.removed[u.id].ts > u.ts);
+// perm: deleted by an admin for good (until an admin restores him); the super admin can't be deleted
+const isBanned = id => !!(cat.removed?.[id]?.perm && id !== cat.group?.sa);
+const activeUser = u => { if (!u || u.gone || isBanned(u.id)) return false; const r = cat.removed?.[u.id]; return !(r && !r.perm && !r.restored && r.ts > u.ts); };
 const activeIds = () => Object.values(cat.users).filter(activeUser).map(u => u.id);
 function canOwnSmp(uid) {
   const u = cat.users[uid]; if (!u) return false;
@@ -872,8 +879,19 @@ function canOwnSmp(uid) {
   const g = cat.grants?.[uid];
   return !!(g && g.ok && u.pub && canon(g.pub) === canon(u.pub));
 }
-const reqPending = uid => { const r = cat.requests?.[uid], g = cat.grants?.[uid]; return !!(r && !r.cancelled && (!g || g.ts < r.ts)); };
-const pendingRequests = () => Object.values(cat.requests || {}).filter(r => reqPending(r.id) && !canOwnSmp(r.id));
+// every SMP of a player who is not an admin needs its own approval (grant keyed by the SMP id);
+// older approvals for the whole player (grant keyed by his id) keep his existing SMPs
+function smpAllowed(x) {
+  const u = cat.users[x.owner]; if (!u) return false;
+  if (userIsAdmin(u)) return true;
+  const g = cat.grants?.[x.id];
+  if (g && g.smp === x.id && g.owner === x.owner && g.ok && u.pub && canon(g.pub) === canon(u.pub)) return true;
+  return canOwnSmp(x.owner);
+}
+const smpReqs = () => Object.values(cat.requests || {}).filter(r => r.smp && r.id !== r.by && !r.cancelled);
+const reqState = r => { const g = cat.grants?.[r.smp]; return !g ? 'wait' : g.ok ? 'ok' : 'no'; };
+const pendingRequests = () => smpReqs().filter(r => reqState(r) === 'wait' && activeUser(cat.users[r.by]));
+const myReqs = () => smpReqs().filter(r => r.by === me.uid && !(reqState(r) === 'ok' && cat.smps[r.smp]));
 
 let saveTimer = null;
 function save() {
@@ -905,8 +923,8 @@ async function claimSuper() {
 const canEdit = v => v.owner === me.uid;
 const commitVideo = v => commit('videos', v);
 const DEFAULT_SECS = [['Epizody', 'Hlavní díly'], ['Nejlepší momenty', 'Souboje, vtipy a akce'], ['Novinky', 'Upoutávky a oznámení']];
-async function saveSmp(data, id) {
-  const isNew = !id;
+async function saveSmp(data, id, fresh = false) {
+  const isNew = !id || fresh;
   if (isNew && smpsOf(me.uid).length >= MAX_SMP) throw new Error(`Můžeš mít nejvýš ${MAX_SMP} vlastní SMP. Nejdřív nějaké smaž.`);
   id = id || rid();
   await commit('smps', { ...(cat.smps[id] || {}), id, owner: me.uid, ...data });
@@ -1141,11 +1159,11 @@ const COVERS = new Proxy([], { get: (_, k) => k === 'length' ? 6 : theme === 'zl
 const THUMBS = new Proxy([], { get: (_, k) => k === 'length' ? 4 : theme === 'zlata' ? THUMBS_Z[k] : mix([26, 32, 22, 36][k]) });
 const nameOf = uid => cat.users[uid]?.name || 'neznámý hráč';
 const isOn = uid => uid === me.uid ? netState === 'ok' : online.has(uid);
-const liveSmps = () => Object.values(cat.smps).filter(x => !x.deleted && canOwnSmp(x.owner) && activeUser(cat.users[x.owner]))
+const liveSmps = () => Object.values(cat.smps).filter(x => !x.deleted && smpAllowed(x) && activeUser(cat.users[x.owner]))
   .sort((a, b) => (b.owner === me.uid) - (a.owner === me.uid) || isOn(b.owner) - isOn(a.owner) || a.name.localeCompare(b.name, 'cs'));
 const secsOf = smp => Object.values(cat.sections).filter(x => x.smp === smp && !x.deleted && secOwner(x) === cat.smps[smp]?.owner).sort((a, b) => (a.order - b.order) || a.name.localeCompare(b.name, 'cs'));
 const vidsOf = smp => Object.values(cat.videos).filter(v => v.smp === smp && !v.deleted && v.owner === cat.smps[smp]?.owner).sort((a, b) => b.created - a.created);
-const liveVideos = () => Object.values(cat.videos).filter(v => !v.deleted && cat.smps[v.smp] && !cat.smps[v.smp].deleted && cat.smps[v.smp].owner === v.owner);
+const liveVideos = () => Object.values(cat.videos).filter(v => !v.deleted && cat.smps[v.smp] && !cat.smps[v.smp].deleted && cat.smps[v.smp].owner === v.owner && !isBanned(v.owner));
 const secName = v => cat.sections[v.section] && !cat.sections[v.section].deleted ? cat.sections[v.section].name : 'Nezařazené';
 const okImg = (x, kind) => typeof x === 'string' && x.startsWith(`data:image/jpeg;base64,`);
 // own = my upload, saved = my stored copy (plays offline), online = someone who has it is online, off = cannot play now
@@ -1167,6 +1185,7 @@ function render() {
   $('#folderPill span').textContent = `${me.name} · ${store.label()}`;
   $('#folderPill').title = store.mode === 'folder' ? 'Tvoje složka s videi' : 'Videa se ukládají v prohlížeči';
   renderRail(); renderRecent(); renderChannel(); renderPlayers(); renderBanners(); renderNet(); renderChat(); renderSide();
+  fulfillGrants();
 }
 function miniBtn(v, i, withSmp) {
   const av = available(v);
@@ -1215,16 +1234,23 @@ function renderRail() {
     host.append(smpCard(x, i));
   });
   if (!cat.group) host.append(el('div', { class: 'empty', text: 'Čekám na připojení ke skupině…' }));
-  else if (canOwnSmp(me.uid)) {
+  else if (isBanned(me.uid)) host.append(el('div', { class: 'newcol', style: 'cursor:default', html: icon('lock', 26) + '<span>Admin tě odebral ze skupiny</span><span class="hint" style="font-weight:400">Ostatní hráči tvoje SMP, videa ani zprávy nevidí.</span>' }));
+  else if (isAdmin) {
     const n = smpsOf(me.uid).length;
     host.append(n < MAX_SMP
       ? el('button', { type: 'button', class: 'newcol', onclick: () => openSmpDlg(null), html: px('plus', 32) + `<span>${n ? 'Založit další SMP' : 'Založit moje SMP'}</span><span class="hint" style="font-weight:400">Máš ${n} z ${MAX_SMP}. Tvoje SMP uvidí všichni hráči.</span>` })
       : el('div', { class: 'newcol', style: 'cursor:default', html: icon('lock', 26) + `<span>Máš ${MAX_SMP} z ${MAX_SMP} SMP</span><span class="hint" style="font-weight:400">Na další SMP nejdřív nějaké smaž (červený koš dole ve sloupci).</span>` }));
-  } else if (reqPending(me.uid))
-    host.append(el('div', { class: 'newcol', style: 'cursor:default', html: icon('lock', 26) + '<span>Žádost odeslána</span><span class="hint" style="font-weight:400">Čeká na schválení adminem. Jakmile ji schválí, můžeš si tu založit svoje SMP.</span>' }));
-  else {
-    const declined = cat.grants?.[me.uid] && !cat.grants[me.uid].ok;
-    host.append(el('button', { type: 'button', class: 'newcol', onclick: requestSmp, html: icon('plus', 26) + `<span>Požádat o vlastní SMP</span><span class="hint" style="font-weight:400">${declined ? 'Minulou žádost admin zamítl. Můžeš požádat znovu.' : 'Admin tvoji žádost schválí a pak si SMP založíš.'}</span>` }));
+  } else {
+    // players: one request per new SMP, the SMP appears by itself once an admin approves it
+    for (const r of myReqs()) {
+      const no = reqState(r) === 'no';
+      host.append(el('div', { class: 'newcol', style: 'cursor:default', html: icon('lock', 26) },
+        el('span', { text: r.name }),
+        el('span', { class: 'hint', style: 'font-weight:400', text: no ? 'Admin žádost zamítl.' : reqState(r) === 'ok' ? 'Schváleno, zakládám…' : 'Žádost odeslána. Čeká na schválení adminem.' }),
+        el('button', { type: 'button', class: 'btn ghost small', text: no ? 'Skrýt' : 'Zrušit žádost', onclick: () => cancelReq(r) })));
+    }
+    const used = smpsOf(me.uid).length + myReqs().filter(r => reqState(r) !== 'no').length;
+    if (used < MAX_SMP) host.append(el('button', { type: 'button', class: 'newcol', onclick: () => openSmpDlg(null), html: icon('plus', 26) + `<span>${used ? 'Požádat o další SMP' : 'Požádat o vlastní SMP'}</span><span class="hint" style="font-weight:400">Vyplníš název a popis, admin žádost schválí a SMP se samo založí. Můžeš mít nejvýš ${MAX_SMP}.</span>` }));
   }
 }
 function renderRecent() {
@@ -1340,7 +1366,7 @@ function renderPlayers() {
           cat.group?.sa === u.id ? el('span', { class: 'badge', text: 'super admin' }) : userIsAdmin(u) ? el('span', { class: 'badge', text: 'admin' }) : null,
           el('span', { class: 'smpcnt', text: `${k} SMP` })),
         el('div', { class: 'muted', style: 'font-size:12px;display:flex;align-items:center;gap:6px' }, el('span', { class: 'dot' + (on ? ' on' : '') }), `${on ? 'online' : 'offline'} · ${n} ${plural(n, 'video', 'videa', 'videí')}`)),
-      isAdmin && u.id !== me.uid ? el('button', { type: 'button', class: 'btn ghost small', 'aria-label': `Odebrat hráče ${u.name}`, title: 'Odebrat hráče', text: '×', style: 'min-height:32px;padding:0 10px', onclick: () => removePlayer(u) }) : null));
+      isAdmin && u.id !== me.uid && u.id !== cat.group?.sa ? el('button', { type: 'button', class: 'btn danger small', 'aria-label': `Smazat hráče ${u.name}`, title: 'Smazat hráče', html: icon('trash', 14), style: 'min-height:32px;padding:0 10px;margin-left:auto', onclick: () => removePlayer(u) }) : null));
   }
 }
 async function superDelete(kind, e, what) {
@@ -1350,11 +1376,15 @@ async function superDelete(kind, e, what) {
   render(); toast('Smazáno.');
 }
 async function removePlayer(u) {
-  const sm = smpsOf(u.id).length > 0;
-  if (!confirm(`Odebrat hráče ${u.name} ze seznamu?${sm ? ' Zmizí i jeho SMP.' : ''} Když se znovu připojí, objeví se zase.`)) return;
-  await commit('removed', { id: u.id });
-  if (sm) await commit('grants', { id: u.id, ok: false });
-  toast(`${u.name} odebrán.`);
+  if (u.id === cat.group?.sa) return toast('Super admina smazat nejde.');
+  const k = smpsOf(u.id).length;
+  if (!confirm(`Smazat hráče ${u.name} natrvalo?${k ? ` Zmizí i ${k === 1 ? 'jeho SMP' : `jeho ${k} SMP`}, videa a zprávy.` : ' Zmizí i jeho zprávy.'} U všech hráčů. Se stejným profilem se už nevrátí. Obnovit ho jde v okně Admin.`)) return;
+  await commit('removed', { id: u.id, perm: true });
+  toast(`Hráč ${u.name} smazán.`);
+}
+async function restorePlayer(id) {
+  await commit('removed', { id, perm: false, restored: true });
+  toast(`Hráč ${nameOf(id)} obnoven.`); renderRequests();
 }
 function renderNet() {
   const p = $('#netPill'); const others = activeIds().filter(u => u !== me?.uid).length;
@@ -1368,7 +1398,8 @@ function renderBanners() {
   const add = (msg, btnText, fn, err) => hosts.forEach(host => host.append(el('div', { class: 'banner' + (err ? ' err' : '') }, el('span', { text: msg }), btnText ? el('button', { type: 'button', class: 'btn small', text: btnText, onclick: fn }) : null)));
   if (store.mode === 'folder' && !store.ready)
     add(`Aplikace potřebuje znovu povolit přístup ke tvé složce „${store.dir.name}“, jinak ostatní nemůžou přehrávat tvoje videa.`, 'Povolit přístup', async () => { if (await store.regrant()) { toast('Přístup ke složce povolen.'); render(); } });
-  if (isAdmin && pendingRequests().length) { const l = pendingRequests(); add(`${l.map(r => nameOf(r.id)).join(', ')} ${l.length > 1 ? 'žádají' : 'žádá'} o vlastní SMP.`, 'Vyřídit', openAdmin); }
+  if (isAdmin && pendingRequests().length) { const l = pendingRequests(); add(l.length > 1 ? `Nové žádosti o SMP: ${l.length}.` : `${nameOf(l[0].by)} žádá o nové SMP „${l[0].name}“.`, 'Vyřídit', openAdmin); }
+  if (isBanned(me.uid)) add('Admin tě odebral ze skupiny. Ostatní hráči tvoje SMP, videa ani zprávy nevidí.', null, null, true);
   if (!cat.group) {
     const st = [...Array(LOBBY_N).keys()].map(k => {
       if (conns.has('L' + k)) return `${k}: spojeno`;
@@ -1582,7 +1613,7 @@ $('#dlgPlayer').addEventListener('cancel', () => closePlayer(true));
 
 /* ================= Chat (per SMP, on the opened SMP page) ================= */
 let chatSmp = null;
-const chatOf = smp => Object.values(cat.chat || {}).filter(m => m.smp === smp && !m.deleted && cat.users[m.author]).sort((a, b) => a.ts - b.ts);
+const chatOf = smp => Object.values(cat.chat || {}).filter(m => m.smp === smp && !m.deleted && cat.users[m.author] && !isBanned(m.author)).sort((a, b) => a.ts - b.ts);
 const fmtTime = ts => { const d = new Date(ts), t = d.toLocaleTimeString('cs', { hour: '2-digit', minute: '2-digit' }); return d.toDateString() === new Date().toDateString() ? t : `${d.getDate()}. ${d.getMonth() + 1}. ${t}`; };
 function renderChat(toEnd) {
   const x = me && activeSmp && cat.smps[activeSmp];
@@ -1716,24 +1747,56 @@ function renderRequests() {
   const host = $('#aReq'); host.textContent = '';
   if (!isAdmin) return;
   const list = pendingRequests();
-  host.append(el('div', { style: 'font-weight:700;margin-bottom:8px', text: list.length ? `Žádosti o vlastní SMP (${list.length})` : 'Žádné nové žádosti o vlastní SMP.' }));
-  for (const r of list) host.append(el('div', { class: 'box', style: 'display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px' },
-    el('div', {}, el('b', { text: nameOf(r.id) }), el('div', { class: 'hint', text: `žádá o vlastní SMP · ${online.has(r.id) ? 'online' : 'offline'}` })),
-    el('div', { class: 'row' },
-      el('button', { type: 'button', class: 'btn ghost small', text: 'Zamítnout', onclick: () => decide(r.id, false) }),
-      el('button', { type: 'button', class: 'btn small', text: 'Schválit', onclick: () => decide(r.id, true) }))));
+  host.append(el('div', { style: 'font-weight:700;margin-bottom:8px', text: list.length ? `Žádosti o nové SMP (${list.length})` : 'Žádné nové žádosti o SMP.' }));
+  for (const r of list) {
+    const pv = el('div', { style: 'width:96px;height:40px;border-radius:8px;flex:none;background:var(--cover) center/cover' });
+    if (okImg(r.bg)) pv.style.backgroundImage = `url("${r.bg}")`;
+    host.append(el('div', { class: 'box', style: 'display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px' },
+      el('div', { class: 'row', style: 'flex:1 1 220px;flex-wrap:nowrap;min-width:0' }, pv,
+        el('div', { style: 'min-width:0' }, el('b', { text: r.name }), r.desc ? el('div', { class: 'hint', text: r.desc }) : null,
+          el('div', { class: 'hint', text: `od hráče ${nameOf(r.by)} · ${online.has(r.by) ? 'online' : 'offline'} · má ${smpsOf(r.by).length} z ${MAX_SMP} SMP` }))),
+      el('div', { class: 'row' },
+        el('button', { type: 'button', class: 'btn ghost small', text: 'Zamítnout', onclick: () => decide(r, false) }),
+        el('button', { type: 'button', class: 'btn small', text: 'Schválit', onclick: () => decide(r, true) }))));
+  }
+  // players deleted for good, with a way back
+  const gone = Object.values(cat.removed || {}).filter(r => isBanned(r.id) && cat.users[r.id]);
+  if (gone.length) {
+    host.append(el('div', { style: 'font-weight:700;margin:14px 0 8px', text: `Smazaní hráči (${gone.length})` }));
+    for (const r of gone) host.append(el('div', { class: 'box', style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px' },
+      el('div', {}, el('b', { text: nameOf(r.id) }), el('div', { class: 'hint', text: `smazal ${nameOf(r.by)} · ${fmtTime(r.ts)}` })),
+      el('button', { type: 'button', class: 'btn sec small', text: 'Obnovit', onclick: () => restorePlayer(r.id) })));
+  }
 }
-async function decide(uid, ok) {
-  const u = cat.users[uid];
+async function decide(r, ok) {
+  const u = cat.users[r.by];
   if (ok && !u?.pub) return toast('Hráč má starou verzi aplikace. Ať obnoví stránku a požádá znovu.');
-  await commit('grants', ok ? { id: uid, ok: true, pub: u.pub } : { id: uid, ok: false });
-  toast(ok ? `${nameOf(uid)} si teď může založit vlastní SMP.` : `Žádost hráče ${nameOf(uid)} zamítnuta.`);
+  if (ok && smpsOf(r.by).length >= MAX_SMP) return toast(`${nameOf(r.by)} už má ${MAX_SMP} SMP. Víc mít nemůže.`);
+  await commit('grants', ok ? { id: r.smp, smp: r.smp, owner: r.by, ok: true, pub: u.pub } : { id: r.smp, smp: r.smp, owner: r.by, ok: false });
+  toast(ok ? `SMP „${r.name}“ schváleno. Založí se, až bude ${nameOf(r.by)} online.` : `Žádost „${r.name}“ zamítnuta.`);
   renderRequests();
 }
-async function requestSmp() {
-  if (!cat.group) return toast('Ještě nejsi připojený ke skupině.');
-  await commit('requests', { id: me.uid });
-  toast('Žádost odeslána. Admin ji uvidí, jakmile bude online.');
+async function cancelReq(r) {
+  if (reqState(r) === 'wait' && !confirm(`Zrušit žádost o SMP „${r.name}“?`)) return;
+  const { bg, ...lite } = r;
+  await commit('requests', { ...lite, cancelled: true });
+}
+// my approved requests turn into SMPs (signed by me) as soon as I see the approval
+let fulfilling = false;
+async function fulfillGrants() {
+  if (fulfilling || !me || isBanned(me.uid)) return;
+  const todo = smpReqs().filter(r => r.by === me.uid && reqState(r) === 'ok' && !cat.smps[r.smp] && cat.grants[r.smp].owner === me.uid);
+  if (!todo.length) return;
+  fulfilling = true;
+  try {
+    for (const r of todo) {
+      if (smpsOf(me.uid).length >= MAX_SMP) break;
+      await saveSmp({ name: r.name, desc: r.desc || '', bg: okImg(r.bg) ? r.bg : null }, r.smp, true);
+      if (r.bg) { const { bg, ...lite } = r; await commit('requests', lite); }   // the picture now lives in the SMP
+      toast(`Admin schválil tvoje SMP „${r.name}“. Je založené.`);
+    }
+  } catch (ex) { console.warn(ex); }
+  finally { fulfilling = false; }
 }
 $('#adminForm').onsubmit = async e => {
   e.preventDefault(); const err = $('#aErr'); err.textContent = '';
@@ -1865,7 +1928,11 @@ function showBg() { const pv = $('#smpPrev'); pv.style.backgroundImage = smpBg ?
 function openSmpDlg(id) {
   const x = id && cat.smps[id]; smpNew = !x || x.deleted || x.owner !== me.uid; smpEditId = smpNew ? null : id;
   if (smpNew && smpsOf(me.uid).length >= MAX_SMP) return toast(`Můžeš mít nejvýš ${MAX_SMP} vlastní SMP.`);
-  $('#smpTitle').textContent = smpNew ? 'Založit nové SMP' : 'Upravit SMP';
+  const req = smpNew && !isAdmin;
+  if (req && smpsOf(me.uid).length + myReqs().filter(r => reqState(r) !== 'no').length >= MAX_SMP) return toast(`Můžeš mít nejvýš ${MAX_SMP} vlastní SMP (počítají se i čekající žádosti).`);
+  $('#smpTitle').textContent = req ? 'Žádost o nové SMP' : smpNew ? 'Založit nové SMP' : 'Upravit SMP';
+  $('#smpGo').textContent = req ? 'Poslat žádost' : 'Uložit';
+  $('#smpReqHint').classList.toggle('hidden', !req);
   $('#smpName').value = !smpNew ? x.name : `${me.name} SMP${smpsOf(me.uid).length ? ' ' + (smpsOf(me.uid).length + 1) : ''}`; $('#smpDesc').value = !smpNew ? (x.desc || '') : '';
   smpBg = !smpNew ? (x.bg || null) : null; showBg(); $('#smpErr').textContent = '';
   $('#smpDel').classList.toggle('hidden', smpNew);
@@ -1895,10 +1962,17 @@ $('#smpBg').onchange = async e => {
 $('#smpBgDel').onclick = () => { smpBg = null; showBg(); };
 $('#smpForm').onsubmit = async e => {
   e.preventDefault(); const err = $('#smpErr'); err.textContent = '';
-  if (!canOwnSmp(me.uid)) return err.textContent = 'Na vlastní SMP potřebuješ schválení od admina.';
   const name = $('#smpName').value.trim(); if (!name) return;
   $('#smpGo').disabled = true;
   try {
+    if (smpNew && !isAdmin) {                                  // players send a request instead
+      if (!cat.group) throw new Error('Ještě nejsi připojený ke skupině.');
+      const r = { id: rid(), smp: rid(), name, desc: $('#smpDesc').value.trim() };
+      if (smpBg) r.bg = smpBg;
+      await commit('requests', r);
+      $('#dlgSmp').close(); toast('Žádost odeslána. Admin ji uvidí, jakmile bude online.');
+      return;
+    }
     const id = await saveSmp({ name, desc: $('#smpDesc').value.trim(), bg: smpBg }, smpEditId);
     $('#dlgSmp').close(); if (smpNew) openSmp(id); toast(smpNew ? 'SMP založeno. Ostatní ho uvidí, jakmile budou online.' : 'SMP uloženo.');
   } catch (ex) { err.textContent = ex.message; }
