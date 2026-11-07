@@ -770,13 +770,41 @@ const idb = (() => {
     get: (s, k) => tx(s, 'readonly', o => o.get(k)),
     set: (s, k, v) => tx(s, 'readwrite', o => o.put(v, k)),
     del: (s, k) => tx(s, 'readwrite', o => o.delete(k)),
-    clear: s => tx(s, 'readwrite', o => o.clear())
+    clear: s => tx(s, 'readwrite', o => o.clear()),
+    keys: s => tx(s, 'readonly', o => o.getAllKeys())
   };
 })();
 
 /* ================= Storage: user's folder (Chrome/Edge) or browser (others) ================= */
+// videos this computer really has (own uploads and saved copies), keyed by video id
+const localVids = new Set();
 const store = {
   mode: 'idb', dir: null, ready: true,
+  // rebuild the list of saved videos: index in the browser + what really lies in videos/ and cache/
+  async index() {
+    localVids.clear();
+    const locs = new Map();
+    for (const k of await idb.keys('kv').catch(() => [])) if (typeof k === 'string' && k.startsWith('loc:')) locs.set(k.slice(4), await idb.get('kv', k));
+    if (this.mode === 'folder' && this.ready) {
+      const found = new Map();
+      for (const kind of ['videos', 'cache']) {
+        try {
+          const d = await this.dir.getDirectoryHandle(kind);
+          for await (const [name, h] of d.entries()) {
+            const m = /^([a-z0-9]{6,})(\.[a-z0-9]{1,5})?$/i.exec(name);
+            if (h.kind === 'file' && m && !(kind === 'cache' && found.has(m[1]))) found.set(m[1], kind + '/' + name);
+          }
+        } catch { }
+      }
+      for (const [vid, loc] of locs) if (loc !== 'idb' && !found.has(vid)) { locs.delete(vid); await idb.del('kv', 'loc:' + vid); }   // file was moved or deleted
+      for (const [vid, loc] of found) if (locs.get(vid) !== loc && locs.get(vid) !== 'idb') { locs.set(vid, loc); await idb.set('kv', 'loc:' + vid, loc); }
+    }
+    for (const vid of locs.keys()) localVids.add(vid);
+    // tell the others which videos they can get from me
+    let ch = false;
+    for (const vid of localVids) { const v = cat.videos[vid]; if (v && me && v.owner !== me.uid && !cat.holders[vid]?.[me.uid]) { (cat.holders[vid] || (cat.holders[vid] = {}))[me.uid] = Date.now(); ch = true; } }
+    if (ch && me) { save(); broadcast(); }
+  },
   async init() {
     const h = FS_OK ? await idb.get('kv', 'dir') : null;
     if (h) { this.mode = 'folder'; this.dir = h; this.ready = (await h.queryPermission({ mode: 'readwrite' })) === 'granted'; }
@@ -784,8 +812,9 @@ const store = {
   async pick() {
     const h = await window.showDirectoryPicker({ id: 'onionsmp', mode: 'readwrite' });
     await idb.set('kv', 'dir', h); this.dir = h; this.mode = 'folder'; this.ready = true;
+    await this.index();
   },
-  async regrant() { this.ready = (await this.dir.requestPermission({ mode: 'readwrite' })) === 'granted'; return this.ready; },
+  async regrant() { this.ready = (await this.dir.requestPermission({ mode: 'readwrite' })) === 'granted'; if (this.ready) await this.index(); return this.ready; },
   label() { return this.mode === 'folder' ? this.dir.name : 'v prohlížeči'; },
   async put(kind, vid, blob, ext) {
     if (this.mode === 'folder') {
@@ -798,6 +827,7 @@ const store = {
     } else {
       await idb.set('files', vid, blob); await idb.set('kv', 'loc:' + vid, 'idb');
     }
+    localVids.add(vid);
   },
   async get(vid) {
     const loc = await idb.get('kv', 'loc:' + vid);
@@ -1272,7 +1302,7 @@ const liveVideos = () => Object.values(cat.videos).filter(v => !v.deleted && cat
 const secName = v => cat.sections[v.section] && !cat.sections[v.section].deleted ? cat.sections[v.section].name : 'Nezařazené';
 const okImg = (x, kind) => typeof x === 'string' && x.startsWith(`data:image/jpeg;base64,`);
 // own = my upload, saved = my stored copy (plays offline), online = someone who has it is online, off = cannot play now
-const vState = v => v.owner === me.uid ? 'own' : cat.holders[v.id]?.[me.uid] ? 'saved' : sourcesFor(v).length ? 'online' : 'off';
+const vState = v => v.owner === me.uid ? 'own' : localVids.has(v.id) ? 'saved' : sourcesFor(v).length ? 'online' : 'off';
 function available(v) { return vState(v) !== 'off'; }
 let onlyAvail = false;
 const query = () => $('#search').value.trim().toLowerCase();
@@ -1527,7 +1557,7 @@ function renderBanners() {
   if (!me) return;
   const add = (msg, btnText, fn, err) => hosts.forEach(host => host.append(el('div', { class: 'banner' + (err ? ' err' : '') }, el('span', { text: msg }), btnText ? el('button', { type: 'button', class: 'btn small', text: btnText, onclick: fn }) : null)));
   if (store.mode === 'folder' && !store.ready)
-    add(`Aplikace potřebuje znovu povolit přístup ke tvé složce „${store.dir.name}“, jinak ostatní nemůžou přehrávat tvoje videa.`, 'Povolit přístup', async () => { if (await store.regrant()) { toast('Přístup ke složce povolen.'); render(); } });
+    add(`Aplikace potřebuje znovu povolit přístup ke tvé složce „${store.dir.name}“, jinak ostatní nemůžou přehrávat tvoje videa a ty nepřehraješ svoje uložené kopie.`, 'Povolit přístup', async () => { if (await store.regrant()) { toast('Přístup ke složce povolen.'); render(); } });
   if (isAdmin && pendingRequests().length) { const l = pendingRequests(); add(l.length > 1 ? `Nové žádosti o SMP: ${l.length}.` : `${nameOf(l[0].by)} žádá o nové SMP „${l[0].name}“.`, 'Vyřídit', () => goPage('players')); }
   if (isBanned(me.uid)) add('Admin tě odebral ze skupiny. Ostatní hráči tvoje SMP, videa ani zprávy nevidí.', null, null, true);
   if (!cat.group) {
@@ -1731,9 +1761,18 @@ async function play(v) {
   closePlayer(true);
   $('#plTitle').textContent = v.title; $('#plDesc').textContent = v.desc || '';
   $('#dlgPlayer').showModal();
+  // saved in the folder, but Chrome forgot the permission after a restart: ask right away (the click still counts)
+  if (store.mode === 'folder' && !store.ready && localVids.has(v.id)) {
+    let ok = false; try { ok = await store.regrant(); } catch { }
+    if (ok) render();
+    else return plStatus('Video máš uložené ve složce, ale aplikace k ní nemá přístup. Povol přístup ke složce (tlačítko nahoře) a pusť video znovu.', null);
+  }
   const local = await store.get(v.id);
   if (local) return playBlob(local, v.owner === me.uid ? 'Tvoje video ze tvé složky.' : isOn(v.owner) ? 'Přehráváš svou uloženou kopii.' : `Offline režim: ${nameOf(v.owner)} není přihlášený, přehráváš svou uloženou kopii.`);
-  if (store.mode === 'folder' && !store.ready && await store.has(v.id)) return plStatus('Video máš ve složce, ale aplikace k ní nemá přístup. Klikni nahoře na „Povolit přístup“.', null);
+  if (localVids.has(v.id)) {          // the saved copy is gone (moved or deleted from the folder)
+    localVids.delete(v.id); await idb.del('kv', 'loc:' + v.id); render();
+    if (!sourcesFor(v).length) return plStatus(`Uložená kopie se u tebe nenašla (asi byla smazaná nebo přesunutá ze složky). ${nameOf(v.owner)} ani nikdo jiný, kdo video má, teď není online.`, null);
+  }
   requestFrom(v, sourcesFor(v));
 }
 function closePlayer(silent) {
@@ -2740,7 +2779,7 @@ $('#aSnapDl').onclick = async () => {
   } catch (ex) { $('#aPubErr').textContent = ex.message; }
 };
 
-function start() { routeFromHash(); render(); startNet(); loadSnapshot(); setInterval(() => { if (!cat.group) renderBanners(); }, 2000); }
+async function start() { await store.index(); routeFromHash(); render(); startNet(); loadSnapshot(); setInterval(() => { if (!cat.group) renderBanners(); }, 2000); }
 
 (async function boot() {
   await store.init();
