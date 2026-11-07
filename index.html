@@ -322,6 +322,34 @@ dialog.lookDlg{width:min(1200px,calc(100vw - 24px))}
 .lkBox{padding:10px;border-radius:12px;background:var(--surface);border:1px solid var(--border)}.lkBox b{font-size:12px;display:block}
 .lkBox i{display:block;height:6px;border-radius:3px;background:var(--surface2);margin-top:6px}.lkBox i+i{width:70%}
 #smpPage.looked .thumb,.lkPage.looked .thumb{background:var(--thumb)!important}
+.apage{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:24px 24px 60px}
+.afilter{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.afilter input,.afilter select{width:230px;max-width:100%}
+.astats{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.astats div{padding:10px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--border);min-width:104px}
+.astats b{display:block;font-size:22px;line-height:1.2}.astats span{font-size:12px;color:var(--muted)}
+.alist{display:flex;flex-direction:column;gap:10px}
+.arow{border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--cardsh)}
+.arow.gone{opacity:.7;border-style:dashed}
+.arow>summary{display:flex;align-items:center;gap:14px;padding:12px 14px;cursor:pointer;list-style:none;flex-wrap:wrap}
+.arow>summary::-webkit-details-marker{display:none}
+.arow>summary::before{content:'▸';color:var(--muted);transition:transform .15s;flex:none}
+.arow[open]>summary::before{transform:rotate(90deg)}
+.ath{width:112px;height:46px;border-radius:9px;flex:none;background:var(--cover) center/cover no-repeat}
+.amain{flex:1 1 220px;min-width:0}
+.amain>b{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:16px}
+.ameta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted);margin-top:2px}
+.ameta .dot{display:inline-block;vertical-align:middle;margin-right:4px}
+.aacts{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
+.abody{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:4px 18px;padding:0 16px 16px;border-top:1px solid var(--border)}
+.abody h4{margin:14px 0 8px;font-size:14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.aitem{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;background:var(--surface2);margin-bottom:6px;font-size:13px}
+.aitem>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aitem small{color:var(--muted)}
+.btn.xs{min-height:28px;padding:0 9px;font-size:12px}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr));gap:18px;align-items:start}
+.sgrid .pane{display:flex;flex-direction:column;gap:14px;scroll-margin-top:90px}
+.sgrid .pane h2{margin:0}
+.sgrid .pane.locked{opacity:.55}
 </style>
 </head>
 <body>
@@ -331,11 +359,11 @@ dialog.lookDlg{width:min(1200px,calc(100vw - 24px))}
  <a href="#" class="brand" id="brandLink" aria-label="minecraft SMP – domů"><canvas class="fig3d hidden" id="leanSkin" width="1" height="1" aria-hidden="true"></canvas><span id="logoSlot"></span><span class="bt">minecraft <span>SMP</span></span></a>
  <nav class="nav" aria-label="Hlavní nabídka">
   <button type="button" class="ni" data-ic="home" data-nav="home">Domů</button>
-  <button type="button" class="ni" data-ic="smp" data-nav="smps">SMP servery</button>
+  <button type="button" class="ni" data-ic="smp" data-page="smps">SMP servery</button>
   <button type="button" class="ni" data-ic="film" data-nav="recentBox">Naposledy přidané</button>
-  <button type="button" class="ni" data-ic="players" data-nav="playersBox">Hráči</button>
+  <button type="button" class="ni" data-ic="players" data-page="players">Hráči</button>
   <button type="button" class="ni" data-ic="chest" id="navFolder">Moje složka</button>
-  <button type="button" class="ni" data-ic="settings" id="settingsBtn">Nastavení</button>
+  <button type="button" class="ni" data-ic="settings" data-page="settings">Nastavení</button>
  </nav>
  <button type="button" class="sidefoot" id="adminBtn"></button>
 </aside>
@@ -409,6 +437,98 @@ dialog.lookDlg{width:min(1200px,calc(100vw - 24px))}
   </section>
  </div>
 </div>
+
+<section class="apage hidden" id="pgSmps" aria-label="Přehled všech SMP">
+ <div class="toolbar">
+  <div><div class="eyebrow">PŘEHLED · VŠECHNA SMP VŠECH HRÁČŮ</div><h1>SMP servery</h1><div class="muted" id="psIntro"></div></div>
+  <div class="afilter"><input type="search" id="psSearch" placeholder="Hledat SMP, sekci, video" aria-label="Hledat v přehledu SMP"><select id="psOwner" aria-label="Majitel SMP"></select></div>
+ </div>
+ <div class="astats" id="psStats"></div>
+ <div class="alist" id="psList"></div>
+</section>
+
+<section class="apage hidden" id="pgPlayers" aria-label="Správa hráčů">
+ <div class="toolbar">
+  <div><div class="eyebrow">SPRÁVA HRÁČŮ</div><h1>Hráči</h1><div class="muted" id="ppIntro"></div></div>
+  <div class="afilter"><input type="search" id="ppSearch" placeholder="Hledat hráče" aria-label="Hledat hráče"></div>
+ </div>
+ <div class="astats" id="ppStats"></div>
+ <section class="pane hidden" id="ppReqPane" style="margin-bottom:18px" aria-label="Žádosti o SMP"><h2 id="ppReqTitle">Žádosti o nové SMP</h2><div id="ppReq"></div></section>
+ <div class="chips" id="ppFilter" role="group" aria-label="Filtr hráčů"></div>
+ <div class="alist" id="ppList"></div>
+</section>
+
+<section class="apage hidden" id="pgSettings" aria-label="Nastavení">
+ <div class="toolbar">
+  <div><div class="eyebrow">ADMINISTRACE WEBU</div><h1>Nastavení</h1><div class="muted">Všechna nastavení aplikace na jednom místě. Část pro admina se odemkne kódem admina.</div></div>
+ </div>
+ <div class="chips" id="sgNav" role="group" aria-label="Části nastavení"></div>
+ <div class="sgrid">
+  <section class="pane" id="sgProfile" data-t="Můj profil">
+   <h2>Můj profil a vzhled</h2>
+   <form id="setForm" style="display:flex;flex-direction:column;gap:14px">
+    <label class="f">Tvoje jméno<div class="row" style="flex-wrap:nowrap"><input type="text" id="stName" maxlength="30"><button type="submit" class="btn">Uložit</button></div></label>
+   </form>
+   <div class="f">Vzhled aplikace<div class="themes" id="stMode" role="group" aria-label="Vzhled"></div></div>
+   <div class="f">Barva<div class="themes" id="stThemes" role="group" aria-label="Barva aplikace"></div></div>
+   <div class="hint">Vzhled a barva platí jen pro tenhle prohlížeč.</div>
+   <div id="stSkin"></div>
+  </section>
+  <section class="pane" id="sgInvite" data-t="Pozvánka">
+   <h2>Pozvánka pro další hráče</h2>
+   <div class="row" style="flex-wrap:nowrap"><input type="text" id="stLink" readonly aria-label="Pozvánka"><button type="button" class="btn" id="stCopy">Kopírovat</button></div>
+   <div class="hint">Nový hráč otevře odkaz a připojí se přes tebe nebo přes jiného hráče online. Se zveřejněným <code>skupina.json</code> stačí poslat i samotnou adresu aplikace.</div>
+  </section>
+  <section class="pane" id="sgFolder" data-t="Složka a záloha">
+   <h2>Moje složka a záloha</h2>
+   <div id="sgStoreInfo"></div>
+   <div class="row"><button type="button" class="btn sec small" id="sgOpenFolder">Otevřít Moje složka</button></div>
+  </section>
+  <section class="pane" id="setAdmin" data-t="Admin">
+   <h2>Admin</h2>
+   <form id="adminForm" class="hidden" style="display:flex;flex-direction:column;gap:12px">
+    <label class="f">Kód admina<input type="password" id="aCode" autocomplete="current-password"></label>
+    <div class="hint">Kód admina mají jen správci skupiny. Odemkne schvalování žádostí, mazání hráčů a SMP a nastavení skupiny.</div>
+    <div class="err" id="aErr" role="alert"></div>
+    <div class="row" style="justify-content:flex-end"><button type="submit" class="btn" id="aGo">Přihlásit</button></div>
+   </form>
+   <div id="aIn" class="hidden" style="display:flex;flex-direction:column;gap:12px">
+    <div class="box" id="aInfo"></div>
+    <div class="row"><button type="button" class="btn sec small" id="aGoPlayers">Hráči a žádosti</button><button type="button" class="btn sec small" id="aGoSmps">Všechna SMP</button><button type="button" class="btn ghost small" id="aLogout">Odhlásit admina</button></div>
+   </div>
+  </section>
+  <section class="pane adminOnly" id="sgGroup" data-t="Skupina">
+   <h2>Skupina</h2>
+   <form id="groupForm" style="display:flex;flex-direction:column;gap:12px">
+    <label class="f">Název skupiny<div class="row" style="flex-wrap:nowrap"><input type="text" id="sgName" maxlength="40"><button type="submit" class="btn">Uložit</button></div></label>
+   </form>
+   <div class="box" id="sgInfo"></div>
+  </section>
+  <section class="pane adminOnly" id="sgPub" data-t="GitHub">
+   <h2>Zveřejnit skupinu na GitHubu</h2>
+   <div class="hint">Aby noví hráči viděli SMP a ostatní hráče, i když nikdo není online, uloží se seznam do souboru <code>skupina.json</code> na GitHubu. Obsahuje skupinu, hráče, SMP, sekce, seznam videí a jejich náhledy. Chat, žádosti, videa samotná a kód admina v něm nejsou. Soubor je veřejný.</div>
+   <label class="f">GitHub token (stačí jednou na tomhle počítači)<input type="password" id="aTok" autocomplete="off" placeholder="github_pat_…"></label>
+   <div class="hint">Token vytvoříš na <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com → Settings → Fine-grained tokens</a>: Repository access „Only select repositories“ → <span id="aRepo">onion-smp</span>, Permissions → Contents „Read and write“. S tokenem se seznam zveřejní sám, nejvýš jednou za 10 minut po změně.</div>
+   <div class="row"><button type="button" class="btn small" id="aPub">Zveřejnit teď</button><button type="button" class="btn sec small" id="aSnapDl">Stáhnout skupina.json</button><button type="button" class="btn ghost small hidden" id="aTokDel">Smazat token</button></div>
+   <div class="hint" id="aPubSt"></div>
+   <div class="err" id="aPubErr" role="alert"></div>
+  </section>
+  <section class="pane adminOnly" id="sgCode" data-t="Kód admina">
+   <h2>Kód admina</h2>
+   <form id="codeForm" style="display:flex;flex-direction:column;gap:12px">
+    <label class="f">Nový kód admina<input type="password" id="aNew" autocomplete="new-password"></label>
+    <label class="f">Nový kód znovu<input type="password" id="aNew2" autocomplete="new-password"></label>
+    <div class="hint">Admini, kteří už jsou přihlášení, práva neztratí. Nový kód platí pro další přihlášení. Použij aspoň 6 znaků.</div>
+    <div class="err" id="aCodeErr" role="alert"></div>
+    <div class="row" style="justify-content:flex-end"><button type="submit" class="btn">Změnit kód</button></div>
+   </form>
+  </section>
+  <section class="pane" id="sgAbout" data-t="O aplikaci">
+   <h2>O aplikaci</h2>
+   <div class="box" id="sgAboutInfo"></div>
+  </section>
+ </div>
+</section>
 </div>
 </div>
 
@@ -437,36 +557,6 @@ dialog.lookDlg{width:min(1200px,calc(100vw - 24px))}
  </form>
 </dialog>
 
-<dialog id="dlgAdmin">
- <form class="dlg" id="adminForm" method="dialog">
-  <h2>Admin</h2>
-  <div id="aLogin">
-   <label class="f">Kód admina<input type="password" id="aCode" autocomplete="current-password"></label>
-   <div class="hint" style="margin-top:6px">Kód admina mají jen správci skupiny, kteří schvalují žádosti o vlastní SMP. Pro vlastní SMP stačí na hlavní stránce kliknout na „Požádat o vlastní SMP“.</div>
-  </div>
-  <div id="aIn" class="hidden" style="display:flex;flex-direction:column;gap:14px">
-   <div class="box">Máš práva admina: schvaluješ žádosti o nová SMP, mažeš hráče (koš v seznamu hráčů) a zakládáš SMP bez žádosti.</div>
-   <div id="aReq"></div>
-   <div class="box" style="display:flex;flex-direction:column;gap:10px">
-    <b>Zveřejnit skupinu na GitHubu</b>
-    <div class="hint">Aby noví hráči viděli SMP a ostatní hráče, i když nikdo není online, uloží se seznam do souboru <code>skupina.json</code> na GitHubu. Obsahuje skupinu, hráče, SMP, sekce, seznam videí a jejich náhledy. Chat, žádosti, videa samotná a kód admina v něm nejsou. Soubor je veřejný.</div>
-    <label class="f">GitHub token (stačí jednou na tomhle počítači)<input type="password" id="aTok" autocomplete="off" placeholder="github_pat_…"></label>
-    <div class="hint">Token vytvoříš na <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com → Settings → Fine-grained tokens</a>: Repository access „Only select repositories“ → <span id="aRepo">onion-smp</span>, Permissions → Contents „Read and write“. S tokenem se seznam zveřejní sám, nejvýš jednou za 10 minut po změně.</div>
-    <div class="row"><button type="button" class="btn small" id="aPub">Zveřejnit teď</button><button type="button" class="btn sec small" id="aSnapDl">Stáhnout skupina.json</button><button type="button" class="btn ghost small hidden" id="aTokDel">Smazat token</button></div>
-    <div class="hint" id="aPubSt"></div>
-   </div>
-   <label class="f">Nový kód admina (nepovinné)<input type="password" id="aNew" autocomplete="new-password"></label>
-   <label class="f">Nový kód znovu<input type="password" id="aNew2" autocomplete="new-password"></label>
-   <div class="hint">Admini, kteří už jsou přihlášení, práva neztratí. Nový kód platí pro další přihlášení.</div>
-  </div>
-  <div class="err" id="aErr" role="alert"></div>
-  <div class="row" style="justify-content:flex-end">
-   <button type="button" class="btn ghost hidden" id="aLogout">Odhlásit admina</button>
-   <button type="button" class="btn sec" data-close>Zavřít</button>
-   <button type="submit" class="btn" id="aGo">Přihlásit</button>
-  </div>
- </form>
-</dialog>
 
 <dialog id="dlgSmp">
  <form class="dlg" id="smpForm" method="dialog">
@@ -580,23 +670,15 @@ dialog.lookDlg{width:min(1200px,calc(100vw - 24px))}
 </dialog>
 
 <dialog id="dlgSettings">
- <form class="dlg" id="setForm" method="dialog">
-  <h2>Nastavení</h2>
-  <label class="f">Tvoje jméno<input type="text" id="stName" maxlength="30"></label>
-  <div class="f">Vzhled<div class="themes" id="stMode" role="group" aria-label="Vzhled"></div></div>
-  <div class="f">Barva<div class="themes" id="stThemes" role="group" aria-label="Barva aplikace"></div></div>
-  <div id="stSkin"></div>
+ <form class="dlg" id="folderForm" method="dialog">
+  <h2>Moje složka</h2>
   <div class="box" id="stStore"></div>
-  <label class="f">Pozvánka pro další hráče
-   <div class="row" style="flex-wrap:nowrap"><input type="text" id="stLink" readonly><button type="button" class="btn" id="stCopy">Kopírovat</button></div>
-  </label>
-  <div class="hint">Nový hráč otevře odkaz a připojí se přes tebe, takže při prvním připojení musíš mít aplikaci otevřenou.</div>
   <div class="row">
    <button type="button" class="btn sec small" id="stExport">Stáhnout zálohu katalogu</button>
    <label class="btn sec small" style="cursor:pointer">Načíst zálohu<input type="file" id="stImport" accept="application/json" class="hidden"></label>
    <button type="button" class="btn ghost small" id="stReset">Smazat profil z prohlížeče</button>
   </div>
-  <div class="row" style="justify-content:flex-end"><button type="button" class="btn sec" data-close>Zavřít</button><button type="submit" class="btn">Uložit</button></div>
+  <div class="row" style="justify-content:flex-end"><button type="button" class="btn sec" data-close>Zavřít</button></div>
  </form>
 </dialog>
 
@@ -786,6 +868,9 @@ const HOME_GID = '';
 const SUPER = 'erik3d', MAX_SMP = 3, BG_MAX = 1000000, CHAT_DAYS = 90, CHAT_LEN = 300;
 const iAmSuper = () => !!(cat.group?.sa && cat.group.sa === me?.uid && canon(cat.group.saPub) === canon(userPub));
 const bySuper = async e => !!(e.deleted && cat.group?.sa && e.by === cat.group.sa && await verify(e, await pubKey(cat.group.saPub)));
+// moderators: the super admin (own key) or any admin (group key, marked ga: 1) may delete anything
+const byMod = async e => (await bySuper(e)) || !!(e.deleted && e.ga === 1 && await verify(e));
+const canMod = () => iAmSuper() || !!(isAdmin && signKey);
 const admText = u => `adm:${u.id}:${canon(u.pub)}`;
 async function verify(o, key = verifyKey) {
   if (!o || typeof o.sig !== 'string' || !key) return false;
@@ -858,25 +943,25 @@ async function mergeCat(inc) {
       if (!e.deleted && !smpAllowed(e)) continue;
       if (!e.deleted && (!cat.smps[id] || cat.smps[id].deleted) && smpsOf(e.owner).length >= MAX_SMP) continue;
       if (!(await verify(e, await userVerifyKey(e.owner)))) continue;
-    } else if (!(await bySuper(e))) continue;
+    } else if (!(await byMod(e))) continue;
     cat.smps[id] = e; changed = true;
   }
   for (const [id, e] of Object.entries(inc.sections || {})) {
     if (!e || e.id !== id || !e.smp || !newer(e, cat.sections[id])) continue;
     if (cat.sections[id] && (cat.sections[id].smp !== e.smp || secOwner(cat.sections[id]) !== secOwner(e))) continue;
-    if (e.by === secOwner(e) ? await verify(e, await userVerifyKey(e.by)) : await bySuper(e)) { cat.sections[id] = e; changed = true; }
+    if (e.by === secOwner(e) ? await verify(e, await userVerifyKey(e.by)) : await byMod(e)) { cat.sections[id] = e; changed = true; }
   }
   for (const [id, e] of Object.entries(inc.videos || {})) {
     if (!e || e.id !== id || !e.smp || !e.owner || !newer(e, cat.videos[id])) continue;
     if (cat.videos[id] && cat.videos[id].owner !== e.owner) continue;   // nobody can steal a video
-    if (e.by === e.owner ? await verify(e, await userVerifyKey(e.owner)) : await bySuper(e)) { cat.videos[id] = e; changed = true; }
+    if (e.by === e.owner ? await verify(e, await userVerifyKey(e.owner)) : await byMod(e)) { cat.videos[id] = e; changed = true; }
   }
   // chat messages: signed by their author; the author or the super admin may delete them
   const cutoff = Date.now() - CHAT_DAYS * 864e5;
   for (const [id, e] of Object.entries(inc.chat || {})) {
     if (!e || e.id !== id || typeof e.smp !== 'string' || !e.author || typeof e.text !== 'string' || e.text.length > CHAT_LEN || !(e.ts > cutoff) || !newer(e, cat.chat[id])) continue;
     if (cat.chat[id] && cat.chat[id].author !== e.author) continue;
-    if (e.by === e.author ? await verify(e, await userVerifyKey(e.author)) : await bySuper(e)) { cat.chat[id] = e; changed = true; }
+    if (e.by === e.author ? await verify(e, await userVerifyKey(e.author)) : await byMod(e)) { cat.chat[id] = e; changed = true; }
   }
   for (const [vid, h] of Object.entries(inc.holders || {})) {
     if (!h || typeof h !== 'object') continue;
@@ -923,8 +1008,8 @@ function save() {
 }
 async function commit(kind, e, light = false) {
   e.ts = Date.now(); e.by = me.uid; delete e.sig;
-  if (kind === 'group' || kind === 'grants' || kind === 'removed') { if (!signKey) throw new Error('Tohle může jen admin.'); await sign(e); }
-  else await sign(e, userKey);
+  if (kind === 'group' || kind === 'grants' || kind === 'removed' || (e.ga === 1 && e.deleted)) { if (!signKey) throw new Error('Tohle může jen admin.'); await sign(e); }
+  else { delete e.ga; await sign(e, userKey); }
   if (kind === 'group') cat.group = e; else cat[kind][e.id] = e;
   save(); render();
   if (light) sendPart({ [kind]: { [e.id]: e } }); else broadcast();
@@ -1200,11 +1285,10 @@ function render() {
   $('#groupName').textContent = 'VŠECHNA SMP · ' + (cat.group?.name || 'minecraft SMP').toUpperCase();
   const nReq = isAdmin ? pendingRequests().length : 0;
   $('#adminBtn').innerHTML = px('shield', 26) + `<span style="flex:1"><b>${isAdmin ? 'Admin ✓' : 'Admin'}</b><small>${iAmSuper() ? 'super admin' : isAdmin ? 'přihlášen' : 'zadat kód'}</small></span>` + (nReq ? `<span class="badge">${nReq}</span>` : '');
-  if ($('#dlgAdmin').open) renderRequests();
   $('#folderPill').innerHTML = px('chest', 18) + `<span></span>`;
   $('#folderPill span').textContent = `${me.name} · ${store.label()}`;
   $('#folderPill').title = store.mode === 'folder' ? 'Tvoje složka s videi' : 'Videa se ukládají v prohlížeči';
-  renderRail(); renderRecent(); renderChannel(); renderPlayers(); renderBanners(); renderNet(); renderChat(); renderSide();
+  renderRail(); renderRecent(); renderChannel(); renderPlayers(); renderBanners(); renderNet(); renderChat(); renderSide(); renderPages();
   fulfillGrants();
 }
 function miniBtn(v, i, withSmp) {
@@ -1284,27 +1368,35 @@ function renderRecent() {
 function renderSide() {
   const inSmp = !!(activeSmp && cat.smps[activeSmp] && !cat.smps[activeSmp].deleted);
   document.querySelectorAll('.ni[data-nav]').forEach(b => b.toggleAttribute('aria-current', false));
-  const cur = document.querySelector(`.ni[data-nav="${inSmp ? 'smps' : 'home'}"]`); if (cur) cur.setAttribute('aria-current', 'page');
+  document.querySelectorAll('.ni[data-page]').forEach(b => b.toggleAttribute('aria-current', false));
+  const cur = activePage && !inSmp ? document.querySelector(`.ni[data-page="${activePage}"]`) : document.querySelector(`.ni[data-nav="home"]`);
+  if (cur) cur.setAttribute('aria-current', 'page');
   const lean = $('#leanSkin'), src = saSkin();
   lean.classList.toggle('hidden', !src); $('#brandLink').classList.toggle('hasSkin', !!src);
   if (src && lean.dataset.src !== src) { lean.dataset.src = src; drawFigure(lean, src, 84); }
 }
 function openSmp(id) { location.hash = 'smp=' + id; }
+const PAGES = { smps: '#pgSmps', players: '#pgPlayers', settings: '#pgSettings' };
+let activePage = null;
+const goPage = k => { location.hash = k ? 'page=' + k : ''; };
 function routeFromHash() {
   const m = /smp=([a-z0-9]+)/.exec(location.hash);
   const next = m ? m[1] : null;
+  const pm = /page=([a-z]+)/.exec(location.hash), page = pm && PAGES[pm[1]] ? pm[1] : null;
   if (next !== activeSmp) { activeSmp = next; activeSec = 'all'; $('#spSearch').value = ''; window.scrollTo(0, 0); }
-  renderChannel(); renderChat(); if (me) renderSide();
+  if (page !== activePage) { activePage = page; window.scrollTo(0, 0); if (me && page === 'settings') renderSettings(true); }
+  renderChannel(); renderChat(); if (me) { renderSide(); renderPages(); }
 }
 window.addEventListener('hashchange', routeFromHash);
 function renderChannel() {
   const x = activeSmp && cat.smps[activeSmp];
-  const show = !!(x && !x.deleted);
-  $('#home').classList.toggle('hidden', show);
+  const show = !!(x && !x.deleted), pg = show ? null : activePage;
+  $('#home').classList.toggle('hidden', show || !!pg);
   $('#smpPage').classList.toggle('hidden', !show);
+  for (const [k, sel] of Object.entries(PAGES)) $(sel).classList.toggle('hidden', pg !== k);
   if (!show) return;
   const mine = x.owner === me.uid, on = isOn(x.owner);
-  const sup = !mine && iAmSuper();   // super admin deletes anything in other players' SMPs
+  const sup = !mine && canMod();   // super admin and admins delete anything in other players' SMPs
   document.querySelectorAll('.ownerOnly').forEach(e => e.classList.toggle('hidden', !mine));
   document.querySelectorAll('.superOnly').forEach(e => e.classList.toggle('hidden', !sup));
   const secs = secsOf(x.id), all = vidsOf(x.id), ids = new Set(secs.map(s => s.id));
@@ -1389,10 +1481,28 @@ function renderPlayers() {
       isAdmin && u.id !== me.uid && u.id !== cat.group?.sa ? el('button', { type: 'button', class: 'btn danger small', 'aria-label': `Smazat hráče ${u.name}`, title: 'Smazat hráče', html: icon('trash', 14), style: 'min-height:32px;padding:0 10px;margin-left:auto', onclick: () => removePlayer(u) }) : null));
   }
 }
+const entryOwner = (kind, e) => kind === 'sections' ? secOwner(e) : kind === 'chat' ? e.author : e.owner;
+// delete one record: own records with the own key, anything else as a moderator (super admin or admin)
+async function modDelete(kind, e, what, ask = true) {
+  if (!e || e.deleted) return false;
+  const own = entryOwner(kind, e) === me.uid;
+  if (!own && !canMod()) { toast('Tohle může smazat jen admin.'); return false; }
+  if (ask && !confirm(`Smazat ${what}? Smaže se u všech hráčů. Soubory ve složce autora zůstanou.`)) return false;
+  const x = { ...e, deleted: true };
+  if (kind === 'chat') x.text = '';
+  if (!own && !iAmSuper()) x.ga = 1; else delete x.ga;
+  await commit(kind, x, kind === 'chat');
+  return true;
+}
+async function modDeleteMany(kind, list, what) {
+  list = list.filter(e => e && !e.deleted); if (!list.length) return toast('Není co smazat.');
+  if (!confirm(`Smazat ${what} (${list.length})? Smaže se u všech hráčů.`)) return;
+  for (const e of list) await modDelete(kind, e, '', false);
+  render(); toast(`Smazáno: ${list.length}.`);
+}
 async function superDelete(kind, e, what) {
-  if (!confirm(`Smazat ${what}? Jako super admin to smažeš u všech hráčů. Soubory ve složce autora zůstanou.`)) return;
-  await commit(kind, { ...e, deleted: true });
-  if (kind === 'smps') location.hash = ''; else if (kind === 'sections') activeSec = 'all';
+  if (!(await modDelete(kind, e, what))) return;
+  if (kind === 'smps' && activeSmp === e.id) location.hash = ''; else if (kind === 'sections') activeSec = 'all';
   render(); toast('Smazáno.');
 }
 async function removePlayer(u) {
@@ -1404,7 +1514,7 @@ async function removePlayer(u) {
 }
 async function restorePlayer(id) {
   await commit('removed', { id, perm: false, restored: true });
-  toast(`Hráč ${nameOf(id)} obnoven.`); renderRequests();
+  toast(`Hráč ${nameOf(id)} obnoven.`); render();
 }
 function renderNet() {
   const p = $('#netPill'); const others = activeIds().filter(u => u !== me?.uid).length;
@@ -1418,7 +1528,7 @@ function renderBanners() {
   const add = (msg, btnText, fn, err) => hosts.forEach(host => host.append(el('div', { class: 'banner' + (err ? ' err' : '') }, el('span', { text: msg }), btnText ? el('button', { type: 'button', class: 'btn small', text: btnText, onclick: fn }) : null)));
   if (store.mode === 'folder' && !store.ready)
     add(`Aplikace potřebuje znovu povolit přístup ke tvé složce „${store.dir.name}“, jinak ostatní nemůžou přehrávat tvoje videa.`, 'Povolit přístup', async () => { if (await store.regrant()) { toast('Přístup ke složce povolen.'); render(); } });
-  if (isAdmin && pendingRequests().length) { const l = pendingRequests(); add(l.length > 1 ? `Nové žádosti o SMP: ${l.length}.` : `${nameOf(l[0].by)} žádá o nové SMP „${l[0].name}“.`, 'Vyřídit', openAdmin); }
+  if (isAdmin && pendingRequests().length) { const l = pendingRequests(); add(l.length > 1 ? `Nové žádosti o SMP: ${l.length}.` : `${nameOf(l[0].by)} žádá o nové SMP „${l[0].name}“.`, 'Vyřídit', () => goPage('players')); }
   if (isBanned(me.uid)) add('Admin tě odebral ze skupiny. Ostatní hráči tvoje SMP, videa ani zprávy nevidí.', null, null, true);
   if (!cat.group) {
     const st = [...Array(LOBBY_N).keys()].map(k => {
@@ -1645,7 +1755,7 @@ function renderChat(toEnd) {
   if (!x || x.deleted) { chatSmp = null; return; }
   if (chatSmp !== activeSmp) { chatSmp = activeSmp; toEnd = true; $('#chatIn').value = ''; }
   const log = $('#chatLog'), atEnd = toEnd || log.scrollHeight - log.scrollTop - log.clientHeight < 30;
-  const msgs = chatOf(activeSmp), sup = iAmSuper();
+  const msgs = chatOf(activeSmp), sup = canMod();
   log.textContent = '';
   $('#chatCnt').textContent = msgs.length ? `(${msgs.length})` : '';
   if (!msgs.length) log.append(el('div', { class: 'muted', style: 'font-size:13px', text: 'Zatím žádné zprávy. Napiš první!' }));
@@ -1658,8 +1768,8 @@ function renderChat(toEnd) {
   if (atEnd) log.scrollTop = log.scrollHeight;
 }
 async function delChat(m) {
-  if (m.author !== me.uid && !confirm('Smazat zprávu jako super admin?')) return;
-  await commit('chat', { ...m, text: '', deleted: true }, true);
+  if (m.author !== me.uid && !confirm('Smazat zprávu jako admin?')) return;
+  await modDelete('chat', m, '', false);
 }
 $('#chatForm').onsubmit = async e => {
   e.preventDefault();
@@ -1761,37 +1871,8 @@ $('#setupForm').onsubmit = async e => {
 
 /* ================= Admin ================= */
 function openAdmin() {
-  $('#aErr').textContent = ''; $('#aCode').value = $('#aNew').value = $('#aNew2').value = '';
-  $('#aLogin').classList.toggle('hidden', isAdmin); $('#aIn').classList.toggle('hidden', !isAdmin);
-  $('#aLogout').classList.toggle('hidden', !isAdmin);
-  $('#aGo').textContent = isAdmin ? 'Uložit nový kód' : 'Přihlásit';
-  renderRequests(); renderPubState();
-  $('#dlgAdmin').open || $('#dlgAdmin').showModal();
-}
-function renderRequests() {
-  const host = $('#aReq'); host.textContent = '';
-  if (!isAdmin) return;
-  const list = pendingRequests();
-  host.append(el('div', { style: 'font-weight:700;margin-bottom:8px', text: list.length ? `Žádosti o nové SMP (${list.length})` : 'Žádné nové žádosti o SMP.' }));
-  for (const r of list) {
-    const pv = el('div', { style: 'width:96px;height:40px;border-radius:8px;flex:none;background:var(--cover) center/cover' });
-    if (okImg(r.bg)) pv.style.backgroundImage = `url("${r.bg}")`;
-    host.append(el('div', { class: 'box', style: 'display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px' },
-      el('div', { class: 'row', style: 'flex:1 1 220px;flex-wrap:nowrap;min-width:0' }, pv,
-        el('div', { style: 'min-width:0' }, el('b', { text: r.name }), r.desc ? el('div', { class: 'hint', text: r.desc }) : null,
-          el('div', { class: 'hint', text: `od hráče ${nameOf(r.by)} · ${online.has(r.by) ? 'online' : 'offline'} · má ${smpsOf(r.by).length} z ${MAX_SMP} SMP` }))),
-      el('div', { class: 'row' },
-        el('button', { type: 'button', class: 'btn ghost small', text: 'Zamítnout', onclick: () => decide(r, false) }),
-        el('button', { type: 'button', class: 'btn small', text: 'Schválit', onclick: () => decide(r, true) }))));
-  }
-  // players deleted for good, with a way back
-  const gone = Object.values(cat.removed || {}).filter(r => isBanned(r.id) && cat.users[r.id]);
-  if (gone.length) {
-    host.append(el('div', { style: 'font-weight:700;margin:14px 0 8px', text: `Smazaní hráči (${gone.length})` }));
-    for (const r of gone) host.append(el('div', { class: 'box', style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px' },
-      el('div', {}, el('b', { text: nameOf(r.id) }), el('div', { class: 'hint', text: `smazal ${nameOf(r.by)} · ${fmtTime(r.ts)}` })),
-      el('button', { type: 'button', class: 'btn sec small', text: 'Obnovit', onclick: () => restorePlayer(r.id) })));
-  }
+  goPage('settings');
+  setTimeout(() => $('#setAdmin')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
 }
 async function decide(r, ok) {
   const u = cat.users[r.by];
@@ -1799,7 +1880,7 @@ async function decide(r, ok) {
   if (ok && smpsOf(r.by).length >= MAX_SMP) return toast(`${nameOf(r.by)} už má ${MAX_SMP} SMP. Víc mít nemůže.`);
   await commit('grants', ok ? { id: r.smp, smp: r.smp, owner: r.by, ok: true, pub: u.pub } : { id: r.smp, smp: r.smp, owner: r.by, ok: false });
   toast(ok ? `SMP „${r.name}“ schváleno. Založí se, až bude ${nameOf(r.by)} online.` : `Žádost „${r.name}“ zamítnuta.`);
-  renderRequests();
+  render();
 }
 async function cancelReq(r) {
   if (reqState(r) === 'wait' && !confirm(`Zrušit žádost o SMP „${r.name}“?`)) return;
@@ -1828,28 +1909,234 @@ $('#adminForm').onsubmit = async e => {
   if (!cat.group) return err.textContent = 'Ještě nejsi připojený ke skupině.';
   $('#aGo').disabled = true;
   try {
-    if (!isAdmin) {
-      let priv;
-      if (!cat.group.keyEnc) throw new Error('Kód admina půjde zadat, až se spojíš s ostatními hráči (aspoň jeden musí být online).');
-      try { priv = await unwrapPriv(cat.group.keyEnc, $('#aCode').value); } catch { throw new Error('Špatný kód.'); }
-      await setSignKey(priv); isAdmin = true; await idb.set('kv', 'adminKey', priv);
-      await commitMe();
-      $('#dlgAdmin').close(); toast('Teď máš práva admina. Můžeš si založit vlastní SMP.');
-    } else {
-      const a = $('#aNew').value;
-      if (a.length < 4) throw new Error('Nový kód musí mít aspoň 4 znaky.');
-      if (a !== $('#aNew2').value) throw new Error('Kódy se neshodují.');
-      const priv = await idb.get('kv', 'adminKey');
-      await commit('group', { ...cat.group, keyEnc: await wrapPriv(priv, a) });
-      $('#dlgAdmin').close(); toast('Kód admina změněn.');
-    }
+    let priv;
+    if (!cat.group.keyEnc) throw new Error('Kód admina půjde zadat, až se spojíš s ostatními hráči (aspoň jeden musí být online).');
+    try { priv = await unwrapPriv(cat.group.keyEnc, $('#aCode').value); } catch { throw new Error('Špatný kód.'); }
+    await setSignKey(priv); isAdmin = true; await idb.set('kv', 'adminKey', priv);
+    await commitMe();
+    $('#aCode').value = ''; renderSettings(true); render();
+    toast('Teď máš práva admina.');
   } catch (ex) { err.textContent = ex.message; }
   finally { $('#aGo').disabled = false; }
 };
+$('#codeForm').onsubmit = async e => {
+  e.preventDefault(); const err = $('#aCodeErr'); err.textContent = '';
+  try {
+    if (!isAdmin) throw new Error('Nejdřív se přihlas jako admin.');
+    const a = $('#aNew').value;
+    if (a.length < 4) throw new Error('Nový kód musí mít aspoň 4 znaky.');
+    if (a !== $('#aNew2').value) throw new Error('Kódy se neshodují.');
+    const priv = await idb.get('kv', 'adminKey');
+    await commit('group', { ...cat.group, keyEnc: await wrapPriv(priv, a) });
+    $('#aNew').value = $('#aNew2').value = ''; toast('Kód admina změněn.');
+  } catch (ex) { err.textContent = ex.message; }
+};
+$('#groupForm').onsubmit = async e => {
+  e.preventDefault();
+  const n = $('#sgName').value.trim();
+  if (!isAdmin || !cat.group) return toast('Název skupiny může změnit jen admin.');
+  if (!n) return toast('Název nesmí být prázdný.');
+  if (n === cat.group.name) return toast('Název je stejný.');
+  try { await commit('group', { ...cat.group, name: n }); toast('Název skupiny uložen.'); } catch (ex) { toast(ex.message); }
+};
 $('#aLogout').onclick = async () => {
   await idb.del('kv', 'adminKey'); signKey = null; isAdmin = false;
-  $('#dlgAdmin').close(); render(); toast('Odhlášeno z admina na tomto počítači.');
+  renderSettings(true); render(); toast('Odhlášeno z admina na tomto počítači.');
 };
+$('#aGoPlayers').onclick = () => goPage('players');
+$('#aGoSmps').onclick = () => goPage('smps');
+
+/* ================= Stránky: SMP servery, Hráči, Nastavení ================= */
+function renderPages() {
+  if (!me) return;
+  if (activePage === 'smps') renderPgSmps();
+  else if (activePage === 'players') renderPgPlayers();
+  else if (activePage === 'settings') renderSettings(false);
+}
+const pgOpen = new Set();   // expanded rows survive re-rendering
+function arow(key, cls, summaryKids, bodyFn) {
+  const d = el('details', { class: 'arow' + (cls ? ' ' + cls : '') });
+  if (pgOpen.has(key)) d.open = true;
+  d.addEventListener('toggle', () => { if (d.open) { pgOpen.add(key); if (!d.lastChild.classList?.contains('abody')) d.append(bodyFn()); } else pgOpen.delete(key); });
+  d.append(el('summary', {}, summaryKids));
+  if (d.open) d.append(bodyFn());
+  return d;
+}
+const stop = fn => e => { e.preventDefault(); e.stopPropagation(); fn(); };
+const xbtn = (text, fn, cls = 'danger', label) => el('button', { type: 'button', class: `btn ${cls} xs`, text, 'aria-label': label || text, onclick: stop(fn) });
+const stat = (n, l) => el('div', {}, el('b', { text: String(n) }), el('span', { text: l }));
+const onDot = on => el('span', { class: 'dot' + (on ? ' on' : '') });
+function aitem(main, sub, btn) { return el('div', { class: 'aitem' }, el('span', { title: main }, main, sub ? el('small', { text: ' · ' + sub }) : null), btn || null); }
+
+function renderPgSmps() {
+  const mod = canMod(), all = liveSmps();
+  $('#psIntro').textContent = mod ? 'Přehled SMP všech hráčů. Jako admin tu smažeš cokoliv: celé SMP, sekci, video nebo zprávu v chatu.' : 'Přehled SMP všech hráčů. Smazat tu jde jen tvoje vlastní SMP. Ostatní spravují admini.';
+  // owner filter (keep the selection)
+  const sel = $('#psOwner'), keepV = sel.value;
+  const owners = [...new Set(all.map(x => x.owner))].sort((a, b) => nameOf(a).localeCompare(nameOf(b), 'cs'));
+  sel.textContent = ''; sel.append(el('option', { value: '', text: 'Všichni majitelé' }));
+  for (const o of owners) sel.append(el('option', { value: o, text: nameOf(o) + (o === me.uid ? ' (ty)' : '') }));
+  sel.value = owners.includes(keepV) ? keepV : '';
+  const q = $('#psSearch').value.trim().toLowerCase(), ow = sel.value;
+  const list = all.filter(x => (!ow || x.owner === ow) && (!q || [x.name, x.desc || '', nameOf(x.owner), ...secsOf(x.id).map(s => s.name), ...vidsOf(x.id).map(v => v.title)].join(' ').toLowerCase().includes(q)));
+  const nV = all.reduce((a, x) => a + vidsOf(x.id).length, 0), nS = all.reduce((a, x) => a + secsOf(x.id).length, 0), nC = all.reduce((a, x) => a + chatOf(x.id).length, 0);
+  const st = $('#psStats'); st.textContent = '';
+  st.append(stat(all.length, 'SMP'), stat(all.filter(x => isOn(x.owner)).length, 'online'), stat(nS, plural(nS, 'sekce', 'sekce', 'sekcí')), stat(nV, plural(nV, 'video', 'videa', 'videí')), stat(nC, plural(nC, 'zpráva', 'zprávy', 'zpráv')), stat(owners.length, plural(owners.length, 'majitel', 'majitelé', 'majitelů')));
+  const host = $('#psList'); host.textContent = '';
+  if (!list.length) host.append(el('div', { class: 'empty', text: all.length ? 'Nic nenalezeno.' : 'Zatím tu není žádné SMP.' }));
+  list.forEach((x, i) => {
+    const vids = vidsOf(x.id), secs = secsOf(x.id), chat = chatOf(x.id), on = isOn(x.owner), mine = x.owner === me.uid, canDel = mine || mod;
+    const th = el('span', { class: 'ath' });
+    if (okImg(x.bg)) th.style.backgroundImage = `url("${x.bg}")`; else th.style.backgroundColor = COVERS[i % COVERS.length];
+    const mins = Math.round(vids.reduce((a, v) => a + (v.dur || 0), 0) / 60), size = vids.reduce((a, v) => a + (v.size || 0), 0);
+    const sum = [th,
+      el('div', { class: 'amain' }, el('b', {}, x.name, mine ? el('span', { class: 'badge', text: 'moje' }) : null),
+        el('div', { class: 'ameta' },
+          el('span', {}, onDot(on), `${nameOf(x.owner)} · ${on ? 'online' : 'offline'}`),
+          el('span', { text: `${vids.length} ${plural(vids.length, 'video', 'videa', 'videí')} · ${secs.length} ${plural(secs.length, 'sekce', 'sekce', 'sekcí')} · ${chat.length} ${plural(chat.length, 'zpráva', 'zprávy', 'zpráv')}` }),
+          el('span', { text: `${mins} min${size ? ' · ' + fmtSize(size) : ''}` }),
+          x.desc ? el('span', { text: x.desc }) : null)),
+      el('div', { class: 'aacts' },
+        el('button', { type: 'button', class: 'btn sec small', text: 'Otevřít', onclick: stop(() => openSmp(x.id)) }),
+        canDel ? el('button', { type: 'button', class: 'btn danger small', html: icon('trash', 14) + 'Smazat SMP', onclick: stop(() => mine ? deleteMySmp(x.id) : superDelete('smps', x, `celé SMP „${x.name}“ hráče ${nameOf(x.owner)}`)) }) : null)];
+    host.append(arow('smp:' + x.id, '', sum, () => {
+      const cd = mine || mod;
+      const colS = el('div', {}, el('h4', { text: `Sekce (${secs.length})` }));
+      secs.forEach(s => colS.append(aitem(s.name, `${vids.filter(v => v.section === s.id).length} videí`, cd ? xbtn('Smazat', () => superDelete('sections', s, `sekci „${s.name}“ v SMP „${x.name}“`), 'danger', `Smazat sekci ${s.name}`) : null)));
+      if (!secs.length) colS.append(el('div', { class: 'hint', text: 'Žádné sekce.' }));
+      const colV = el('div', {}, el('h4', {}, el('span', { text: `Videa (${vids.length})` }), cd && vids.length ? xbtn('Smazat všechna', () => modDeleteMany('videos', vids, `všechna videa v SMP „${x.name}“`)) : null));
+      vids.forEach(v => colV.append(aitem(v.title, [secName(v), fmtDur(v.dur), v.size ? fmtSize(v.size) : ''].filter(Boolean).join(' · '),
+        el('span', { style: 'display:flex;gap:6px;flex:none' }, xbtn('Přehrát', () => play(v), 'sec', `Přehrát ${v.title}`), cd ? xbtn('Smazat', () => superDelete('videos', v, `video „${v.title}“`), 'danger', `Smazat video ${v.title}`) : null))));
+      if (!vids.length) colV.append(el('div', { class: 'hint', text: 'Žádná videa.' }));
+      const colC = el('div', {}, el('h4', {}, el('span', { text: `Chat (${chat.length})` }), mod && chat.length ? xbtn('Smazat celý chat', () => modDeleteMany('chat', chat, `všechny zprávy v chatu SMP „${x.name}“`)) : null));
+      chat.slice(-30).reverse().forEach(m => colC.append(aitem(m.text, `${nameOf(m.author)} · ${fmtTime(m.ts)}`, m.author === me.uid || mod ? xbtn('×', () => modDelete('chat', m, 'zprávu'), 'danger', 'Smazat zprávu') : null)));
+      if (chat.length > 30) colC.append(el('div', { class: 'hint', text: `Zobrazeno 30 nejnovějších z ${chat.length}.` }));
+      if (!chat.length) colC.append(el('div', { class: 'hint', text: 'Žádné zprávy.' }));
+      return el('div', { class: 'abody' }, colS, colV, colC);
+    }));
+  });
+}
+$('#psSearch').oninput = renderPgSmps;
+$('#psOwner').onchange = renderPgSmps;
+
+let ppFilter = 'all';
+function renderPgPlayers() {
+  const mod = canMod(), sa = cat.group?.sa;
+  $('#ppIntro').textContent = isAdmin ? 'Všichni hráči online i offline. Tady schvaluješ žádosti o SMP, mažeš a obnovuješ hráče a spravuješ jejich SMP, videa a zprávy.' : 'Všichni hráči online i offline. Správu hráčů mají admini (Nastavení → Admin).';
+  const users = Object.values(cat.users).filter(u => u && !u.gone);
+  const act = users.filter(u => activeUser(u) || u.id === me.uid), gone = users.filter(u => isBanned(u.id));
+  const nOn = act.filter(u => isOn(u.id)).length, nAdm = act.filter(userIsAdmin).length, pend = pendingRequests();
+  const st = $('#ppStats'); st.textContent = '';
+  st.append(stat(act.length, plural(act.length, 'hráč', 'hráči', 'hráčů')), stat(nOn, 'online'), stat(act.length - nOn, 'offline'), stat(nAdm, plural(nAdm, 'admin', 'admini', 'adminů')));
+  if (isAdmin) st.append(stat(pend.length, plural(pend.length, 'žádost', 'žádosti', 'žádostí')), stat(gone.length, 'smazaných'));
+  // requests
+  const rp = $('#ppReqPane'); rp.classList.toggle('hidden', !isAdmin);
+  if (isAdmin) {
+    $('#ppReqTitle').textContent = pend.length ? `Žádosti o nové SMP (${pend.length})` : 'Žádosti o nové SMP';
+    const h = $('#ppReq'); h.textContent = '';
+    if (!pend.length) h.append(el('div', { class: 'hint', text: 'Žádné nové žádosti. Až hráč požádá o SMP, objeví se tady.' }));
+    for (const r of pend) h.append(reqRow(r));
+  }
+  // filter chips
+  const opts = [['all', 'Všichni', act.length], ['on', 'Online', nOn], ['off', 'Offline', act.length - nOn], ['adm', 'Admini', nAdm]];
+  if (isAdmin) opts.push(['gone', 'Smazaní', gone.length]);
+  if (!opts.some(o => o[0] === ppFilter)) ppFilter = 'all';
+  const fc = $('#ppFilter'); fc.textContent = '';
+  for (const [k, n, c] of opts) fc.append(el('button', { type: 'button', 'aria-pressed': String(k === ppFilter), text: `${n} (${c})`, onclick: () => { ppFilter = k; renderPgPlayers(); } }));
+  const q = $('#ppSearch').value.trim().toLowerCase();
+  const rank = u => u.id === me.uid ? 0 : sa === u.id ? 1 : userIsAdmin(u) ? 2 : 3;
+  const base = ppFilter === 'gone' ? gone : act.filter(u => ppFilter === 'all' || (ppFilter === 'on' ? isOn(u.id) : ppFilter === 'off' ? !isOn(u.id) : userIsAdmin(u)));
+  const list = base.filter(u => !q || u.name.toLowerCase().includes(q)).sort((a, b) => rank(a) - rank(b) || isOn(b.id) - isOn(a.id) || a.name.localeCompare(b.name, 'cs'));
+  const host = $('#ppList'); host.textContent = '';
+  if (!list.length) host.append(el('div', { class: 'empty', text: 'Žádný hráč.' }));
+  for (const u of list) {
+    const on = isOn(u.id), meU = u.id === me.uid, banned = isBanned(u.id);
+    const own = smpsOf(u.id), vids = liveVideos().filter(v => v.owner === u.id);
+    const msgs = Object.values(cat.chat || {}).filter(m => m.author === u.id && !m.deleted);
+    const reqs = smpReqs().filter(r => r.by === u.id), wait = reqs.filter(r => reqState(r) === 'wait');
+    const av = sa === u.id && saSkin() ? skinCanvas(saSkin(), 16, 32) : el('span', { html: px('players', 30), style: on ? '' : 'opacity:.55' });
+    const sum = [av,
+      el('div', { class: 'amain' }, el('b', {}, u.name + (meU ? ' (ty)' : ''),
+          sa === u.id ? el('span', { class: 'badge', text: 'super admin' }) : userIsAdmin(u) ? el('span', { class: 'badge', text: 'admin' }) : null,
+          banned ? el('span', { class: 'badge', style: 'background:var(--danger)', text: 'smazaný' }) : null,
+          isAdmin && wait.length ? el('span', { class: 'badge', text: `žádost: ${wait.length}` }) : null),
+        el('div', { class: 'ameta' },
+          el('span', {}, onDot(on), on ? 'online' : 'offline'),
+          el('span', { text: `${own.length} z ${MAX_SMP} SMP` }),
+          el('span', { text: `${vids.length} ${plural(vids.length, 'video', 'videa', 'videí')}` }),
+          el('span', { text: `${msgs.length} ${plural(msgs.length, 'zpráva', 'zprávy', 'zpráv')}` }),
+          u.ts ? el('span', { text: `profil změněn ${fmtTime(u.ts)}` }) : null)),
+      el('div', { class: 'aacts' },
+        banned && isAdmin ? el('button', { type: 'button', class: 'btn sec small', text: 'Obnovit', onclick: stop(() => restorePlayer(u.id)) }) : null,
+        !banned && isAdmin && !meU && sa !== u.id ? el('button', { type: 'button', class: 'btn danger small', html: icon('trash', 14) + 'Smazat hráče', onclick: stop(() => removePlayer(u)) }) : null)];
+    host.append(arow('pl:' + u.id, banned ? 'gone' : '', sum, () => {
+      const cS = el('div', {}, el('h4', {}, el('span', { text: `SMP (${own.length} z ${MAX_SMP})` }), mod && !meU && own.length ? xbtn('Smazat všechna', () => modDeleteMany('smps', own, `všechna SMP hráče ${u.name}`)) : null));
+      own.forEach(x => cS.append(aitem(x.name, `${vidsOf(x.id).length} videí`, el('span', { style: 'display:flex;gap:6px;flex:none' }, xbtn('Otevřít', () => openSmp(x.id), 'sec'),
+        meU ? xbtn('Smazat', () => deleteMySmp(x.id)) : mod ? xbtn('Smazat', () => superDelete('smps', x, `SMP „${x.name}“ hráče ${u.name}`)) : null))));
+      if (!own.length) cS.append(el('div', { class: 'hint', text: 'Žádné SMP.' }));
+      const cR = el('div', {}, el('h4', { text: `Žádosti o SMP (${reqs.length})` }));
+      reqs.slice().sort((a, b) => b.ts - a.ts).forEach(r => {
+        const stt = reqState(r);
+        cR.append(aitem(r.name, stt === 'wait' ? 'čeká' : stt === 'ok' ? (cat.smps[r.smp] ? 'schváleno, založeno' : 'schváleno, čeká na založení') : 'zamítnuto',
+          isAdmin && stt === 'wait' ? el('span', { style: 'display:flex;gap:6px;flex:none' }, xbtn('Zamítnout', () => decide(r, false), 'ghost'), xbtn('Schválit', () => decide(r, true), '')) : null));
+      });
+      if (!reqs.length) cR.append(el('div', { class: 'hint', text: 'Žádné žádosti.' }));
+      const cM = el('div', {}, el('h4', { text: 'Správa' }));
+      cM.append(aitem('ID hráče', u.id), aitem('Aplikace', u.pub ? 'nová verze (vlastní klíč)' : 'stará verze – ať obnoví stránku'));
+      if (mod && !meU) {
+        cM.append(el('div', { class: 'row', style: 'margin-top:6px' },
+          el('button', { type: 'button', class: 'btn danger small', text: 'Smazat všechna jeho videa', onclick: () => modDeleteMany('videos', vids, `všechna videa hráče ${u.name}`) }),
+          el('button', { type: 'button', class: 'btn danger small', text: 'Smazat všechny jeho zprávy', onclick: () => modDeleteMany('chat', msgs, `všechny zprávy hráče ${u.name}`) })));
+      }
+      if (!isAdmin) cM.append(el('div', { class: 'hint', text: 'Mazat a schvalovat můžou jen admini.' }));
+      return el('div', { class: 'abody' }, cS, cR, cM);
+    }));
+  }
+}
+function reqRow(r) {
+  const pv = el('div', { style: 'width:96px;height:40px;border-radius:8px;flex:none;background:var(--cover) center/cover' });
+  if (okImg(r.bg)) pv.style.backgroundImage = `url("${r.bg}")`;
+  return el('div', { class: 'box', style: 'display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px' },
+    el('div', { class: 'row', style: 'flex:1 1 220px;flex-wrap:nowrap;min-width:0' }, pv,
+      el('div', { style: 'min-width:0' }, el('b', { text: r.name }), r.desc ? el('div', { class: 'hint', text: r.desc }) : null,
+        el('div', { class: 'hint', text: `od hráče ${nameOf(r.by)} · ${online.has(r.by) ? 'online' : 'offline'} · má ${smpsOf(r.by).length} z ${MAX_SMP} SMP` }))),
+    el('div', { class: 'row' },
+      el('button', { type: 'button', class: 'btn ghost small', text: 'Zamítnout', onclick: () => decide(r, false) }),
+      el('button', { type: 'button', class: 'btn small', text: 'Schválit', onclick: () => decide(r, true) })));
+}
+$('#ppSearch').oninput = renderPgPlayers;
+
+function renderSettings(initial) {
+  if (!me || activePage !== 'settings') return;
+  if (initial) {
+    $('#stName').value = me.name; $('#sgName').value = cat.group?.name || '';
+    $('#aCode').value = $('#aNew').value = $('#aNew2').value = ''; $('#aErr').textContent = $('#aCodeErr').textContent = $('#aPubErr').textContent = '';
+  }
+  renderMode(); renderThemes(); renderSkinBox();
+  $('#stLink').value = inviteLink();
+  const si = $('#sgStoreInfo'); si.textContent = '';
+  si.append(el('div', { class: 'box' }, el('b', { text: 'Úložiště videí' }),
+    el('div', { class: 'hint', text: store.mode === 'folder' ? `Složka: ${store.dir.name}${store.ready ? '' : ' (přístup je potřeba znovu povolit)'}` : 'Videa se ukládají v tomto prohlížeči.' })));
+  // admin part
+  document.querySelectorAll('#pgSettings .adminOnly').forEach(e => e.classList.toggle('hidden', !isAdmin));
+  $('#adminForm').classList.toggle('hidden', isAdmin); $('#aIn').classList.toggle('hidden', !isAdmin);
+  if (isAdmin) {
+    const n = pendingRequests().length;
+    $('#aInfo').textContent = `${iAmSuper() ? 'Jsi super admin.' : 'Máš práva admina.'} Schvaluješ žádosti o SMP, mažeš hráče, SMP, sekce, videa i zprávy a měníš nastavení skupiny.${n ? ` Čeká ${n} ${plural(n, 'žádost', 'žádosti', 'žádostí')} o SMP.` : ''}`;
+    const g = cat.group || {}, users = Object.values(cat.users).filter(activeUser);
+    const inf = $('#sgInfo'); inf.textContent = '';
+    for (const [k, v] of [['ID skupiny', g.id || '–'], ['Super admin', g.sa ? nameOf(g.sa) : 'zatím nikdo'], ['Hráčů', users.length], ['Adminů', users.filter(userIsAdmin).length], ['SMP', liveSmps().length], ['Videí', liveVideos().length], ['Pevný zámek skupiny', HOME_GID ? 'zapnutý' : 'vypnutý']])
+      inf.append(el('div', { class: 'between', style: 'gap:10px;padding:3px 0' }, el('span', { class: 'muted', text: k }), el('b', { text: String(v) })));
+    renderPubState();
+  }
+  const ab = $('#sgAboutInfo'); ab.textContent = '';
+  for (const [k, v] of [['Moje ID', me.uid], ['Vrátnice pro nové hráče', lobbyPeer ? 'drží ji tento počítač (č. ' + lobbyPeer.id.split('-').pop() + ')' : 'tento počítač ji nedrží'], ['Síť', { ok: 'připojeno', connecting: 'připojuji…', dup: 'otevřeno jinde', nolib: 'bez sítě', off: 'offline' }[netState] || netState], ['Prohlížeč umí složku', FS_OK ? 'ano' : 'ne (videa v prohlížeči)']])
+    ab.append(el('div', { class: 'between', style: 'gap:10px;padding:3px 0' }, el('span', { class: 'muted', text: k }), el('b', { text: String(v), style: 'word-break:break-all;text-align:right' })));
+  // section shortcuts
+  const nav = $('#sgNav'); nav.textContent = '';
+  document.querySelectorAll('#pgSettings .sgrid > .pane').forEach(p => { if (!p.classList.contains('hidden')) nav.append(el('button', { type: 'button', text: p.dataset.t, onclick: () => p.scrollIntoView({ behavior: 'smooth', block: 'start' }) })); });
+}
+$('#sgOpenFolder').onclick = () => openFolder();
 
 /* ================= Sections ================= */
 let editingSec = null;
@@ -2034,23 +2321,22 @@ function renderMode() {
   for (const [k, n, sw] of [['dark', 'Tmavý', '#0e1311'], ['light', 'Světlý', '#f3f5f1']])
     h.append(el('button', { type: 'button', 'aria-pressed': String(k === mode), onclick: () => { setMode(k); renderMode(); } }, el('i', { style: `background:${sw};border:1px solid var(--border)` }), n));
 }
-function openSettings() {
-  renderMode(); renderThemes(); renderSkinBox();
-  $('#stName').value = me.name; $('#stLink').value = inviteLink();
+const openSettings = () => goPage('settings');
+function openFolder() {
   const b = $('#stStore'); b.textContent = '';
   b.append(el('div', { class: 'hint', style: 'margin-bottom:10px', text: `Vrátnice pro nové hráče: ${lobbyPeer ? 'tento počítač ji drží (č. ' + lobbyPeer.id.split('-').pop() + ')' : 'tento počítač ji nedrží'} · ID: ${me.uid}` }));
   b.append(el('div', { style: 'font-weight:700;margin-bottom:6px', text: 'Úložiště videí' }),
     el('div', { class: 'hint', text: store.mode === 'folder' ? `Složka: ${store.dir.name}${store.ready ? '' : ' (přístup je potřeba znovu povolit)'}` : 'Videa se ukládají v tomto prohlížeči.' }));
   if (FS_OK) b.append(el('button', { type: 'button', class: 'btn sec small', style: 'margin-top:10px', text: store.mode === 'folder' ? 'Změnit složku' : 'Vybrat složku', onclick: async () => {
-    try { await store.pick(); toast('Složka nastavena. Videa z původního umístění je potřeba nahrát znovu.'); openSettings(); render(); } catch { }
+    try { await store.pick(); toast('Složka nastavena. Videa z původního umístění je potřeba nahrát znovu.'); openFolder(); render(); } catch { }
   } }));
   $('#dlgSettings').open || $('#dlgSettings').showModal();
 }
 $('#setForm').onsubmit = async e => {
   e.preventDefault();
   const n = $('#stName').value.trim();
-  if (n && n !== me.name) { me.name = n; await idb.set('kv', 'me', me); await commitMe(); }
-  $('#dlgSettings').close();
+  if (!n) return toast('Jméno nesmí být prázdné.');
+  if (n !== me.name) { me.name = n; await idb.set('kv', 'me', me); await commitMe(); toast('Jméno uloženo.'); }
 };
 $('#stCopy').onclick = async () => {
   try { await navigator.clipboard.writeText($('#stLink').value); } catch { $('#stLink').select(); document.execCommand('copy'); }
@@ -2077,8 +2363,7 @@ $('#stReset').onclick = async () => {
 /* ================= wiring ================= */
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());
 $('#adminBtn').onclick = openAdmin;
-$('#settingsBtn').onclick = openSettings;
-$('#folderPill').onclick = openSettings;
+$('#folderPill').onclick = openFolder;
 $('#chUpload').innerHTML = icon('upload', 16) + 'Nahrát video'; $('#chUpload').onclick = () => openUpload(activeSec === 'chat' ? null : activeSec);
 $('#chNewSec').onclick = () => openSection(null);
 $('#chEdit').onclick = () => openSection(cat.sections[activeSec]);
@@ -2089,16 +2374,17 @@ $('#chSaSec').onclick = () => superDelete('sections', cat.sections[activeSec], `
 $('#chClose').onclick = () => { location.hash = ''; };
 $('#spSearch').oninput = renderChannel;
 $('#spAvail').onclick = () => { onlyAvail = !onlyAvail; renderChannel(); };
-$('#heroInvite').innerHTML = px('link', 18) + 'Pozvat hráče'; $('#heroInvite').onclick = openSettings;
+$('#heroInvite').innerHTML = px('link', 18) + 'Pozvat hráče'; $('#heroInvite').onclick = () => { goPage('settings'); setTimeout(() => $('#sgInvite')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80); };
 document.querySelectorAll('[data-ic]').forEach(e => e.insertAdjacentHTML('afterbegin', px(e.dataset.ic, 24)));
 $('#srchIc').innerHTML = px('search', 20);
-$('#navFolder').onclick = openSettings;
+$('#navFolder').onclick = openFolder;
 $('#brandLink').onclick = e => { e.preventDefault(); location.hash = ''; window.scrollTo({ top: 0, behavior: 'smooth' }); };
 document.querySelectorAll('.ni[data-nav]').forEach(b => b.onclick = () => {
   const go = () => { if (b.dataset.nav === 'home') window.scrollTo({ top: 0, behavior: 'smooth' }); else document.getElementById(b.dataset.nav)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
-  if (location.hash.includes('smp=')) { location.hash = ''; setTimeout(go, 60); } else go();
+  if (location.hash.includes('smp=') || location.hash.includes('page=')) { location.hash = ''; setTimeout(go, 60); } else go();
 });
-$('#search').oninput = () => { if (activeSmp) location.hash = ''; renderRail(); renderRecent(); };
+document.querySelectorAll('.ni[data-page]').forEach(b => b.onclick = () => { if (activePage === b.dataset.page && !activeSmp) window.scrollTo({ top: 0, behavior: 'smooth' }); else goPage(b.dataset.page); });
+$('#search').oninput = () => { if (activeSmp || activePage) location.hash = ''; renderRail(); renderRecent(); };
 $('#logoSlot').innerHTML = blockSvg(34);
 $('#wmSlot').innerHTML = blockSvg(520, '');
 $('#logoSlot').style.display = 'inline-flex';
@@ -2431,7 +2717,7 @@ async function publishSnapshot(force) {
   } finally { pubBusy = false; renderPubState(); }
 }
 async function renderPubState() {
-  if (!$('#dlgAdmin').open && !isAdmin) return;
+  if (!isAdmin) return;
   const tok = await idb.get('kv', 'ghToken'), last = await idb.get('kv', 'ghLast'), errM = await idb.get('kv', 'ghErr');
   $('#aRepo').textContent = ghRepo() || 'onion-smp';
   $('#aTok').placeholder = tok ? 'token je uložený' : 'github_pat_…';
@@ -2442,7 +2728,7 @@ $('#aPub').onclick = async () => {
   const t = $('#aTok').value.trim(); if (t) { await idb.set('kv', 'ghToken', t); $('#aTok').value = ''; }
   $('#aPub').disabled = true; $('#aPubSt').textContent = 'Zveřejňuji…';
   try { await publishSnapshot(true); toast('Skupina zveřejněna na GitHubu.'); }
-  catch (ex) { await idb.set('kv', 'ghErr', ex.message); $('#aErr').textContent = ex.message; renderPubState(); }
+  catch (ex) { await idb.set('kv', 'ghErr', ex.message); $('#aPubErr').textContent = ex.message; renderPubState(); }
   finally { $('#aPub').disabled = false; }
 };
 $('#aTokDel').onclick = async () => { await idb.del('kv', 'ghToken'); renderPubState(); toast('Token smazán z tohoto počítače.'); };
@@ -2451,7 +2737,7 @@ $('#aSnapDl').onclick = async () => {
     const a = el('a', { href: URL.createObjectURL(new Blob([JSON.stringify(await snapshot())], { type: 'application/json' })), download: SNAP_FILE });
     document.body.append(a); a.click(); a.remove();
     toast('Soubor skupina.json nahraj na GitHub vedle index.html (Add file → Upload files).', 7000);
-  } catch (ex) { $('#aErr').textContent = ex.message; }
+  } catch (ex) { $('#aPubErr').textContent = ex.message; }
 };
 
 function start() { routeFromHash(); render(); startNet(); loadSnapshot(); setInterval(() => { if (!cat.group) renderBanners(); }, 2000); }
