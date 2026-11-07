@@ -350,10 +350,22 @@ dialog.lookDlg{width:min(1200px,calc(100vw - 24px))}
 .sgrid .pane{display:flex;flex-direction:column;gap:14px;scroll-margin-top:90px}
 .sgrid .pane h2{margin:0}
 .sgrid .pane.locked{opacity:.55}
+#bannedWall{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px;background:var(--bg)}
+#bannedWall.hidden{display:none}
+.bwBox{max-width:540px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:32px;border-radius:20px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--cardsh)}
+.bwBox h1{margin:0;font-size:26px}.bwBox p{margin:0;line-height:1.5}
 </style>
 </head>
 <body>
 <span class="wm" id="wmSlot" aria-hidden="true"></span>
+<div id="bannedWall" class="hidden" role="alertdialog" aria-modal="true" aria-labelledby="bwT">
+ <div class="bwBox">
+  <span id="bwIc"></span>
+  <h1 id="bwT">Admin tě odebral ze skupiny</h1>
+  <p id="bwTxt" class="muted"></p>
+  <div class="row" style="justify-content:center"><button type="button" class="btn sec" id="bwReset">Smazat můj profil z tohoto prohlížeče</button></div>
+ </div>
+</div>
 <div class="shell">
 <aside class="side">
  <a href="#" class="brand" id="brandLink" aria-label="minecraft SMP – domů"><canvas class="fig3d hidden" id="leanSkin" width="1" height="1" aria-hidden="true"></canvas><span id="logoSlot"></span><span class="bt">minecraft <span>SMP</span></span></a>
@@ -1137,7 +1149,7 @@ function setupConn(c) {
   const uid = c.peer.startsWith(LOBBY + '-') ? 'L' + c.peer.split('-').pop() : c.peer.split('-').pop();
   c.on('open', () => {
     pending.delete(uid); conns.set(uid, c); online.add(uid);
-    c.send({ t: 'cat', gid: gid(), cat });
+    c.send({ t: 'cat', gid: gid(), cat: catFor(uid) });
     renderNet(); render();
   });
   c.on('data', d => onMsg(uid, c, d).catch(err => console.warn(err)));
@@ -1148,12 +1160,14 @@ function setupConn(c) {
   });
   c.on('error', () => { });
 }
+// a removed player only learns who is in the group and that he was removed (so a restore reaches him too)
+const catFor = uid => isBanned(uid) ? { group: cat.group, users: cat.users, removed: cat.removed } : cat;
 function broadcast(except) {
-  for (const [u, c] of conns) if (u !== except && c.open) c.send({ t: 'cat', gid: gid(), cat });
+  for (const [u, c] of conns) if (u !== except && c.open) c.send({ t: 'cat', gid: gid(), cat: catFor(u) });
 }
 // small update (one chat message): only that record goes out, everyone passes it on
 function sendPart(part, except) {
-  for (const [u, c] of conns) if (u !== except && c.open && !u.startsWith('L')) c.send({ t: 'part', gid: gid(), cat: part });
+  for (const [u, c] of conns) if (u !== except && c.open && !u.startsWith('L') && !isBanned(u)) c.send({ t: 'part', gid: gid(), cat: part });
 }
 async function onMsg(uid, c, d) {
   if (!d || typeof d !== 'object') return;
@@ -1183,7 +1197,7 @@ async function onMsg(uid, c, d) {
 const serving = new Map();
 async function fileFor(vid, fromUid) {
   const v = cat.videos[vid];
-  if (!v || v.deleted) return { why: 'missing' };
+  if (!v || v.deleted || isBanned(fromUid)) return { why: 'missing' };
   if (store.mode === 'folder' && !store.ready && await store.has(vid)) {
     toast(`${nameOf(fromUid)} chce přehrát tvoje video. Klikni nahoře na „Povolit přístup“ ke složce.`, 9000);
     return { why: 'perm' };
@@ -1313,6 +1327,7 @@ let activeSmp = null;
 
 function render() {
   if (!me) return;
+  renderBannedWall();
   $('#groupName').textContent = 'VŠECHNA SMP · ' + (cat.group?.name || 'minecraft SMP').toUpperCase();
   const nReq = isAdmin ? pendingRequests().length : 0;
   $('#adminBtn').innerHTML = px('shield', 26) + `<span style="flex:1"><b>${isAdmin ? 'Admin ✓' : 'Admin'}</b><small>${iAmSuper() ? 'super admin' : isAdmin ? 'přihlášen' : 'zadat kód'}</small></span>` + (nReq ? `<span class="badge">${nReq}</span>` : '');
@@ -2358,6 +2373,17 @@ function renderThemes() {
     h.append(b);
   }
 }
+// a player removed by an admin sees nothing of the group any more (until an admin restores him)
+function renderBannedWall() {
+  const ban = !!(cat.group && isBanned(me.uid)), w = $('#bannedWall');
+  w.classList.toggle('hidden', !ban); $('.shell').inert = ban;
+  if (!ban) return;
+  document.querySelectorAll('dialog[open]').forEach(d => { if (d.id === 'dlgPlayer') closePlayer(false); else d.close(); });
+  const r = cat.removed[me.uid];
+  $('#bwIc').innerHTML = icon('lock', 44);
+  $('#bwTxt').textContent = `${r?.by && cat.users[r.by] ? `Admin ${nameOf(r.by)}` : 'Admin'} tě ${r?.ts ? fmtTime(r.ts) + ' ' : ''}smazal ze skupiny „${cat.group.name || 'minecraft SMP'}“. Ostatní hráči tvoje SMP, videa ani zprávy nevidí a ty už nevidíš jejich. Jestli jde o omyl, ozvi se adminovi: na stránce Hráči → Smazaní tě může obnovit a aplikace se ti sama odemkne.`;
+}
+$('#bwReset').onclick = () => $('#stReset').click();
 function renderMode() {
   const h = $('#stMode'); h.textContent = '';
   for (const [k, n, sw] of [['dark', 'Tmavý', '#0e1311'], ['light', 'Světlý', '#f3f5f1']])
