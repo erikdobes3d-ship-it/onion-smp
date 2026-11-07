@@ -453,6 +453,7 @@ dialog.lookDlg{width:min(1200px,calc(100vw - 24px))}
   <div class="afilter"><input type="search" id="ppSearch" placeholder="Hledat hráče" aria-label="Hledat hráče"></div>
  </div>
  <div class="astats" id="ppStats"></div>
+ <div class="banner hidden" id="ppLogin" style="margin-bottom:18px"><span>Mazat hráče a schvalovat žádosti může jen admin. Na tomhle počítači teď nejsi přihlášený jako admin.</span><button type="button" class="btn small" id="ppLoginBtn">Přihlásit jako admin</button></div>
  <section class="pane hidden" id="ppReqPane" style="margin-bottom:18px" aria-label="Žádosti o SMP"><h2 id="ppReqTitle">Žádosti o nové SMP</h2><div id="ppReq"></div></section>
  <div class="chips" id="ppFilter" role="group" aria-label="Filtr hráčů"></div>
  <div class="alist" id="ppList"></div>
@@ -2070,6 +2071,7 @@ function renderPgPlayers() {
   if (isAdmin) st.append(stat(pend.length, plural(pend.length, 'žádost', 'žádosti', 'žádostí')), stat(gone.length, 'smazaných'));
   // requests
   const rp = $('#ppReqPane'); rp.classList.toggle('hidden', !isAdmin);
+  $('#ppLogin').classList.toggle('hidden', isAdmin);
   if (isAdmin) {
     $('#ppReqTitle').textContent = pend.length ? `Žádosti o nové SMP (${pend.length})` : 'Žádosti o nové SMP';
     const h = $('#ppReq'); h.textContent = '';
@@ -2144,6 +2146,7 @@ function reqRow(r) {
       el('button', { type: 'button', class: 'btn small', text: 'Schválit', onclick: () => decide(r, true) })));
 }
 $('#ppSearch').oninput = renderPgPlayers;
+$('#ppLoginBtn').onclick = () => { openAdmin(); setTimeout(() => $('#aCode')?.focus(), 400); };
 
 function renderSettings(initial) {
   if (!me || activePage !== 'settings') return;
